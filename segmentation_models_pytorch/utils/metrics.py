@@ -3,6 +3,46 @@ from . import functional as F
 from .base import Activation
 
 
+class AUCROC(base.Metric):
+    __name__ = 'auc_roc'
+
+    def __init__(self, activation=None, ignore_channels=None, **kwargs):
+        super().__init__(**kwargs)
+        self.activation = Activation(activation)
+        self.ignore_channels = ignore_channels
+
+    def forward(self, y_pr, y_gt):
+        y_pr = self.activation(y_pr)
+        return F.auc_roc(
+            y_pr, y_gt,
+            ignore_channels=self.ignore_channels,
+        )
+
+    @property
+    def name(self):
+        return self.__name__
+
+
+class AP(base.Metric):
+    __name__ = 'ap'
+
+    def __init__(self, activation=None, ignore_channels=None, **kwargs):
+        super().__init__(**kwargs)
+        self.activation = Activation(activation)
+        self.ignore_channels = ignore_channels
+
+    def forward(self, y_pr, y_gt):
+        y_pr = self.activation(y_pr)
+        return F.ap(
+            y_pr, y_gt,
+            ignore_channels=self.ignore_channels,
+        )
+
+    @property
+    def name(self):
+        return self.__name__
+
+
 class IoU(base.Metric):
     __name__ = 'iou_score'
 
@@ -22,8 +62,13 @@ class IoU(base.Metric):
             ignore_channels=self.ignore_channels,
         )
 
+    @property
+    def name(self):
+        return self.__name__ + "_" + str(self.threshold)
+
 
 class Fscore(base.Metric):
+    __name__ = 'fscore'
 
     def __init__(self, beta=1, eps=1e-7, threshold=0.5, activation=None, ignore_channels=None, **kwargs):
         super().__init__(**kwargs)
@@ -43,8 +88,13 @@ class Fscore(base.Metric):
             ignore_channels=self.ignore_channels,
         )
 
+    @property
+    def name(self):
+        return self.__name__ + "_" + str(self.threshold)
+
 
 class Accuracy(base.Metric):
+    __name__ = 'accuracy'
 
     def __init__(self, threshold=0.5, activation=None, ignore_channels=None, **kwargs):
         super().__init__(**kwargs)
@@ -60,8 +110,13 @@ class Accuracy(base.Metric):
             ignore_channels=self.ignore_channels,
         )
 
+    @property
+    def name(self):
+        return self.__name__ + "_" + str(self.threshold)
+
 
 class Recall(base.Metric):
+    __name__ = 'recall'
 
     def __init__(self, eps=1e-7, threshold=0.5, activation=None, ignore_channels=None, **kwargs):
         super().__init__(**kwargs)
@@ -79,8 +134,13 @@ class Recall(base.Metric):
             ignore_channels=self.ignore_channels,
         )
 
+    @property
+    def name(self):
+        return self.__name__ + "_" + str(self.threshold)
+
 
 class Precision(base.Metric):
+    __name__ = 'precision'
 
     def __init__(self, eps=1e-7, threshold=0.5, activation=None, ignore_channels=None, **kwargs):
         super().__init__(**kwargs)
@@ -97,3 +157,16 @@ class Precision(base.Metric):
             threshold=self.threshold,
             ignore_channels=self.ignore_channels,
         )
+
+    @property
+    def name(self):
+        return self.__name__ + "_" + str(self.threshold)
+
+
+metrics = {'auc_roc': AUCROC,
+           'ap': AP,
+           'iou_score': IoU,
+           'fscore': Fscore,
+           'accuracy': Accuracy,
+           'recall': Recall,
+           'precision': Precision}

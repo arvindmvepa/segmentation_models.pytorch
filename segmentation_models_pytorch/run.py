@@ -1,0 +1,61 @@
+from .utils.exp import train_net, val_net, test_net, grid_search
+import multiprocessing
+from glob import glob
+import json
+import os
+
+
+def run_test(model, **params):
+    test_net(model, **params)
+
+
+def run_test_exp(model_bnames, exp_dir, **params):
+    if isinstance(model_bnames, str):
+        model_bnames = [model_bnames]
+    job_dirs = list(glob(exp_dir))
+    for model_bname in model_bnames:
+        for job_dir in job_dirs:
+            print(job_dir)
+            params_file = os.path.join(job_dir, "params.json")
+            with open(params_file) as json_file:
+                job_params = json.load(json_file)
+            job_params.update(params)
+            job_params['model_path'] = os.path.join(job_dir, model_bname)
+            p = multiprocessing.Process(target=test_net, kwargs=job_params)
+            p.start()
+            p.join()
+
+
+def run_val_exp(model_bnames, exp_dir, **params):
+    if isinstance(model_bnames, str):
+        model_bnames = [model_bnames]
+    job_dirs = list(glob(exp_dir))
+    for model_bname in model_bnames:
+        for job_dir in job_dirs:
+            print(job_dir)
+            params_file = os.path.join(job_dir, "params.json")
+            with open(params_file) as json_file:
+                job_params = json.load(json_file)
+            job_params.update(params)
+            job_params['model_path'] = os.path.join(job_dir, model_bname)
+            p = multiprocessing.Process(target=val_net, kwargs=job_params)
+            p.start()
+            p.join()
+
+
+def run_exp(exp_dir, **search_params):
+    if not os.path.exists(exp_dir):
+        os.makedirs(exp_dir)
+    searches = grid_search(**search_params)
+
+    for i, search in enumerate(searches):
+        print("starting exp: {}, {}".format(str(i), str(search)))
+        save_dir = os.path.join(exp_dir, str(i))
+        search["save_dir"] = save_dir
+        p = multiprocessing.Process(target=train_net, kwargs=search)
+        p.start()
+        p.join()
+
+
+
+

@@ -9,3 +9,10 @@ from . import encoders
 from . import utils
 
 from .__version__ import __version__
+
+decoders = {"unet": Unet,
+            "linknet": Linknet,
+            "fpn": FPN,
+            "pspnet": PSPNet,
+            "deeplabv3": DeepLabV3,
+            "pan": PAN}

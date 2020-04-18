@@ -1,8 +1,9 @@
 import sys
 import torch
 from tqdm import tqdm as tqdm
+import numpy as np
 from .meter import AverageValueMeter
-
+import time
 
 class Epoch:
 
@@ -20,7 +21,8 @@ class Epoch:
         self.model.to(self.device)
         self.loss.to(self.device)
         for metric in self.metrics:
-            metric.to(self.device)
+            if metric != "inf_time":
+                metric.to(self.device)
 
     def _format_logs(self, logs):
         str_logs = ['{} - {:.4}'.format(k, v) for k, v in logs.items()]
@@ -39,12 +41,13 @@ class Epoch:
 
         logs = {}
         loss_meter = AverageValueMeter()
-        metrics_meters = {metric.__name__: AverageValueMeter() for metric in self.metrics}
+        metrics_meters = {metric.name : AverageValueMeter() for metric in self.metrics if metric != "inf_time"}
+        metrics_meters.update({"inf_time": []} if "inf_time" in self.metrics else {})
 
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
             for x, y in iterator:
                 x, y = x.to(self.device), y.to(self.device)
-                loss, y_pred = self.batch_update(x, y)
+                loss, y_pred, inf_time = self.batch_update(x, y)
 
                 # update loss logs
                 loss_value = loss.cpu().detach().numpy()
@@ -54,9 +57,14 @@ class Epoch:
 
                 # update metrics logs
                 for metric_fn in self.metrics:
-                    metric_value = metric_fn(y_pred, y).cpu().detach().numpy()
-                    metrics_meters[metric_fn.__name__].add(metric_value)
-                metrics_logs = {k: v.mean for k, v in metrics_meters.items()}
+                    if metric_fn == "inf_time":
+                        metrics_meters[metric_fn] = metrics_meters[metric_fn] + [inf_time]
+                    else:
+                        metric_value = metric_fn(y_pred, y).cpu().detach().numpy()
+                        metrics_meters[metric_fn.name].add(metric_value)
+                metrics_logs = {k: v.mean for k, v in metrics_meters.items() if k != 'inf_time'}
+                if 'inf_time' in metrics_meters:
+                    metrics_logs.update({'inf_time': np.mean(metrics_meters['inf_time'])})
                 logs.update(metrics_logs)
 
                 if self.verbose:
@@ -84,11 +92,15 @@ class TrainEpoch(Epoch):
 
     def batch_update(self, x, y):
         self.optimizer.zero_grad()
+        start = time.time()
         prediction = self.model.forward(x)
+        end = time.time()
+        inf_time = end - start
         loss = self.loss(prediction, y)
+        loss = torch.mean(loss)
         loss.backward()
         self.optimizer.step()
-        return loss, prediction
+        return loss, prediction, inf_time
 
 
 class ValidEpoch(Epoch):
@@ -108,6 +120,10 @@ class ValidEpoch(Epoch):
 
     def batch_update(self, x, y):
         with torch.no_grad():
+            start = time.time()
             prediction = self.model.forward(x)
+            end = time.time()
+            inf_time = end - start
             loss = self.loss(prediction, y)
-        return loss, prediction
+            loss = torch.mean(loss)
+        return loss, prediction, inf_time

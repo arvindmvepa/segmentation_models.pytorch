@@ -65,3 +65,14 @@ class BCELoss(nn.BCELoss, base.Loss):
 
 class BCEWithLogitsLoss(nn.BCEWithLogitsLoss, base.Loss):
     pass
+
+
+losses = {"jaccard": JaccardLoss,
+          "dice": DiceLoss,
+          "l1": L1Loss,
+          "mse": MSELoss,
+          "xentropy": CrossEntropyLoss,
+          "nll": NLLLoss,
+          "bce": BCELoss,
+          "bce_lts": BCEWithLogitsLoss
+          }

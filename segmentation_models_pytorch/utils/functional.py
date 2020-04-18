@@ -1,4 +1,6 @@
 import torch
+from sklearn.metrics import roc_auc_score, average_precision_score
+import numpy as np
 
 
 def _take_channels(*xs, ignore_channels=None):
@@ -64,6 +66,32 @@ def f_score(pr, gt, beta=1, eps=1e-7, threshold=None, ignore_channels=None):
     return score
 
 
+def auc_roc(pr, gt, ignore_channels=None):
+    """Calculate auc_roc score between ground truth and prediction probs
+    Args:
+        pr (torch.Tensor): predicted tensor
+        gt (torch.Tensor):  ground truth tensor
+    Returns:
+        float: auc_roc score
+    """
+    pr, gt = _take_channels(pr, gt, ignore_channels=ignore_channels)
+    pr, gt = pr.cpu().detach().numpy().flatten(), np.rint(gt.cpu().detach().numpy().flatten())
+    return torch.tensor(roc_auc_score(gt, pr))
+
+
+def ap(pr, gt, ignore_channels=None):
+    """Calculate ap score between ground truth and prediction probs
+    Args:
+        pr (torch.Tensor): predicted tensor
+        gt (torch.Tensor):  ground truth tensor
+    Returns:
+        float: auc_roc score
+    """
+    pr, gt = _take_channels(pr, gt, ignore_channels=ignore_channels)
+    pr, gt = pr.cpu().detach().numpy().flatten(), np.rint(gt.cpu().detach().numpy().flatten())
+    return torch.tensor(average_precision_score(gt, pr))
+
+
 def accuracy(pr, gt, threshold=0.5, ignore_channels=None):
     """Calculate accuracy score between ground truth and prediction
     Args:
@@ -77,8 +105,8 @@ def accuracy(pr, gt, threshold=0.5, ignore_channels=None):
     pr = _threshold(pr, threshold=threshold)
     pr, gt = _take_channels(pr, gt, ignore_channels=ignore_channels)
 
-    tp = torch.sum(gt == pr)
-    score = tp / gt.view(-1).shape[0]
+    tp_tn = torch.sum(gt * pr) + torch.sum((1-gt) * (1-pr))
+    score = tp_tn / gt.view(-1).shape[0]
     return score
 
 
