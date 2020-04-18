@@ -1,5 +1,6 @@
 import torch
 from sklearn.metrics import roc_auc_score
+import numpy as np
 
 
 def _take_channels(*xs, ignore_channels=None):
@@ -74,7 +75,7 @@ def auc_roc(pr, gt, ignore_channels=None):
         float: auc_roc score
     """
     pr, gt = _take_channels(pr, gt, ignore_channels=ignore_channels)
-    pr, gt = pr.cpu().detach().numpy(), gt.cpu().detach().numpy()
+    pr, gt = np.squeeze(pr.cpu().detach().numpy()), np.squeeze(gt.cpu().detach().numpy())
     return roc_auc_score(gt, pr)
 
 
