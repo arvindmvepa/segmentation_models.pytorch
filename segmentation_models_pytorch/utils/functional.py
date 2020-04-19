@@ -75,7 +75,7 @@ def auc_roc(pr, gt, ignore_channels=None):
         float: auc_roc score
     """
     pr, gt = _take_channels(pr, gt, ignore_channels=ignore_channels)
-    pr, gt = pr.cpu().detach().numpy().flatten(), gt.cpu().detach().numpy().flatten()
+    pr, gt = pr.cpu().detach().numpy().flatten(), np.rint(gt.cpu().detach().numpy().flatten())
     return roc_auc_score(gt, pr)
 
 
