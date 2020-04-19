@@ -76,7 +76,7 @@ def auc_roc(pr, gt, ignore_channels=None):
     """
     pr, gt = _take_channels(pr, gt, ignore_channels=ignore_channels)
     pr, gt = pr.cpu().detach().numpy().flatten(), np.rint(gt.cpu().detach().numpy().flatten())
-    return roc_auc_score(gt, pr)
+    return torch.from_numpy(roc_auc_score(gt, pr))
 
 
 def accuracy(pr, gt, threshold=0.5, ignore_channels=None):
