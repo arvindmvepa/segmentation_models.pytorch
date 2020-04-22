@@ -111,6 +111,10 @@ class Recall(base.Metric):
             ignore_channels=self.ignore_channels,
         )
 
+    @property
+    def name(self):
+        return self.__name__ + "_" + str(self.threshold)
+
 
 class Precision(base.Metric):
 
