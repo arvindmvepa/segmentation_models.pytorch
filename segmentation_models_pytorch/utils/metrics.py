@@ -18,6 +18,10 @@ class AUCROC(base.Metric):
             ignore_channels=self.ignore_channels,
         )
 
+    @property
+    def name(self):
+        return self.__name__
+
 
 class IoU(base.Metric):
     __name__ = 'iou_score'
@@ -37,6 +41,10 @@ class IoU(base.Metric):
             threshold=self.threshold,
             ignore_channels=self.ignore_channels,
         )
+
+    @property
+    def name(self):
+        return self.__name__ + "_" + str(self.threshold)
 
 
 class Fscore(base.Metric):
@@ -59,6 +67,10 @@ class Fscore(base.Metric):
             ignore_channels=self.ignore_channels,
         )
 
+    @property
+    def name(self):
+        return self.__name__ + "_" + str(self.threshold)
+
 
 class Accuracy(base.Metric):
 
@@ -75,6 +87,10 @@ class Accuracy(base.Metric):
             threshold=self.threshold,
             ignore_channels=self.ignore_channels,
         )
+
+    @property
+    def name(self):
+        return self.__name__ + "_" + str(self.threshold)
 
 
 class Recall(base.Metric):
@@ -113,3 +129,7 @@ class Precision(base.Metric):
             threshold=self.threshold,
             ignore_channels=self.ignore_channels,
         )
+
+    @property
+    def name(self):
+        return self.__name__ + "_" + str(self.threshold)
