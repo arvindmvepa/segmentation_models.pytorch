@@ -137,3 +137,11 @@ class Precision(base.Metric):
     @property
     def name(self):
         return self.__name__ + "_" + str(self.threshold)
+
+
+metrics = {"aucroc": AUCROC,
+           "iou": IoU,
+           "fscore": Fscore,
+           "acc": Accuracy,
+           "recall": Recall,
+           "prec": Precision}
