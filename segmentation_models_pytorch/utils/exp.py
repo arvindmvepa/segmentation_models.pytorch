@@ -234,7 +234,7 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
     for i in range(len(val_metrics)):
         val_metrics[i] = metrics[val_metrics[i][0]](**val_metrics[i][1])
 
-    optimizer = optimizers[optimizer[0]](**optimizer[1])
+    optimizer = optimizers[optimizer[0]](params=model.parameters(), **optimizer[1])
 
     train_epoch = smp.utils.train.TrainEpoch(
         model,
