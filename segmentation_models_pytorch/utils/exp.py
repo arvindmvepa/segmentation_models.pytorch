@@ -12,8 +12,8 @@ import numpy as np
 import segmentation_models_pytorch as smp
 import json
 import itertools
-from utils.losses import losses
-from utils.metrics import metrics
+from .losses import losses
+from .metrics import metrics
 
 
 def get_neg_pos_ratio(masks_fps, seg_dir):

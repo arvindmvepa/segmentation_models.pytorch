@@ -1,4 +1,4 @@
-from utils.exp import train_net, grid_search
+from .utils.exp import train_net, grid_search
 import multiprocessing
 import os
 
