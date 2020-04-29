@@ -182,9 +182,8 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
               save_dir='/root/exp', encoder='se_resnext50_32x4d', encoder_weights='imagenet', activation='sigmoid',
               loss=('bce_lts', {}), optimizer=("adam", {}), bs=8, train_metrics=(('accuracy', {}), ),
               val_metrics=(('accuracy', {}), ),  best_metrics=(('accuracy_0.5', 0.0, [], True), ),
-              best_thresh_metrics=(('accuracy', 0.0, [], True), ),
-              last_metrics=('accuracy',), n_splits=10, fold=0, val_freq=5, checkpoint_freq=50, num_epochs=200,
-              random_state=42, device='cuda', cuda='0'):
+              best_thresh_metrics=(('accuracy', 0.0, True), ), last_metrics=('accuracy',), n_splits=10, fold=0,
+              val_freq=5, checkpoint_freq=50, num_epochs=200, random_state=42, device='cuda', cuda='0'):
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
     json.dump(locals(), open(os.path.join(save_dir, "params.json"), 'w'))
@@ -270,7 +269,7 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
                 best_metrics[i] = metric, max_score, other_metrics, gt
 
             for i in range(len(best_thresh_metrics)):
-                metric, max_score, other_metrics, gt = best_thresh_metrics[i]
+                metric, max_score, gt = best_thresh_metrics[i]
                 max_score = save_best_checkpoint(model, metric, max_score, valid_logs, cur_epoch, fold,
                                                  save_dir=save_dir, gt=gt)
                 best_thresh_metrics[i] = metric, max_score, gt
