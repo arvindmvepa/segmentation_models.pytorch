@@ -3,7 +3,7 @@ import multiprocessing
 import os
 
 
-def create_exp(exp_dir, **search_params):
+def run_exp(exp_dir, **search_params):
     if not os.path.exists(exp_dir):
         os.makedirs(exp_dir)
     searches = grid_search(**search_params)
