@@ -180,10 +180,14 @@ def get_preprocessing(preprocessing_fn):
 
 def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
               save_dir='/root/exp', encoder='se_resnext50_32x4d', encoder_weights='imagenet', activation='sigmoid',
-              loss=('bce_lts', {}), optimizer=("adam", {}), bs=8, train_metrics=('accuracy', {}),
-              val_metrics=('accuracy', {}),  best_metrics=('accuracy_0.5',), best_thresh_metrics=('accuracy',),
+              loss=('bce_lts', {}), optimizer=("adam", {}), bs=8, train_metrics=(('accuracy', {}), ),
+              val_metrics=(('accuracy', {}), ),  best_metrics=(('accuracy_0.5', 0.0, [], True), ),
+              best_thresh_metrics=(('accuracy', 0.0, [], True), ),
               last_metrics=('accuracy',), n_splits=10, fold=0, val_freq=5, checkpoint_freq=50, num_epochs=200,
               random_state=42, device='cuda', cuda='0'):
+
+    best_metrics = list(best_metrics)
+    best_thresh_metrics = list(best_thresh_metrics)
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
 
