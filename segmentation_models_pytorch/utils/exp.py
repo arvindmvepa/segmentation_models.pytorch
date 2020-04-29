@@ -14,6 +14,7 @@ import json
 import itertools
 from .losses import losses
 from .metrics import metrics
+from .optimizers import optimizers
 
 
 def get_neg_pos_ratio(masks_fps, seg_dir):
@@ -179,9 +180,11 @@ def get_preprocessing(preprocessing_fn):
 
 def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
               save_dir='/root/exp', encoder='se_resnext50_32x4d', encoder_weights='imagenet', activation='sigmoid',
-              loss=None, optimizer=None, bs=8, train_metrics=(), val_metrics=(), best_metrics=(),
-              best_thresh_metrics=(), last_metrics=(), n_splits=10, fold=0, val_freq=5, checkpoint_freq=50,
-              num_epochs=200, random_state=42, device='cuda', cuda='0'):
+              loss=('bce_lts', {}), optimizer=("adam", {}), bs=8, train_metrics=('accuracy', {}),
+              val_metrics=('accuracy', {}),  best_metrics=('accuracy_0.5',), best_thresh_metrics=('accuracy',),
+              last_metrics=('accuracy',), n_splits=10, fold=0, val_freq=5, checkpoint_freq=50, num_epochs=200,
+              random_state=42, device='cuda', cuda='0'):
+
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
 
     if not os.path.exists(save_dir):
@@ -225,6 +228,8 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
 
     for i in range(len(val_metrics)):
         val_metrics[i] = metrics(val_metrics[i][0])(**val_metrics[i][1])
+
+    optimizer = optimizers[optimizer[0]](**optimizer[1])
 
     train_epoch = smp.utils.train.TrainEpoch(
         model,

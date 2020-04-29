@@ -48,6 +48,7 @@ class IoU(base.Metric):
 
 
 class Fscore(base.Metric):
+    __name__ = 'fscore'
 
     def __init__(self, beta=1, eps=1e-7, threshold=0.5, activation=None, ignore_channels=None, **kwargs):
         super().__init__(**kwargs)
@@ -73,6 +74,7 @@ class Fscore(base.Metric):
 
 
 class Accuracy(base.Metric):
+    __name__ = 'accuracy'
 
     def __init__(self, threshold=0.5, activation=None, ignore_channels=None, **kwargs):
         super().__init__(**kwargs)
@@ -94,6 +96,7 @@ class Accuracy(base.Metric):
 
 
 class Recall(base.Metric):
+    __name__ = 'recall'
 
     def __init__(self, eps=1e-7, threshold=0.5, activation=None, ignore_channels=None, **kwargs):
         super().__init__(**kwargs)
@@ -117,6 +120,7 @@ class Recall(base.Metric):
 
 
 class Precision(base.Metric):
+    __name__ = 'precision'
 
     def __init__(self, eps=1e-7, threshold=0.5, activation=None, ignore_channels=None, **kwargs):
         super().__init__(**kwargs)
@@ -139,9 +143,9 @@ class Precision(base.Metric):
         return self.__name__ + "_" + str(self.threshold)
 
 
-metrics = {"aucroc": AUCROC,
-           "iou": IoU,
-           "fscore": Fscore,
-           "acc": Accuracy,
-           "recall": Recall,
-           "prec": Precision}
+metrics = {AUCROC.name: AUCROC,
+           IoU.name: IoU,
+           Fscore.name: Fscore,
+           Accuracy.name: Accuracy,
+           Recall.name: Recall,
+           Precision.name: Precision}
