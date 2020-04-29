@@ -224,10 +224,10 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
     loss = losses[loss[0]](**loss[1])
 
     for i in range(len(train_metrics)):
-        train_metrics[i] = metrics(train_metrics[i][0])(**train_metrics[i][1])
+        train_metrics[i] = metrics[train_metrics[i][0]](**train_metrics[i][1])
 
     for i in range(len(val_metrics)):
-        val_metrics[i] = metrics(val_metrics[i][0])(**val_metrics[i][1])
+        val_metrics[i] = metrics[val_metrics[i][0]](**val_metrics[i][1])
 
     optimizer = optimizers[optimizer[0]](**optimizer[1])
 
