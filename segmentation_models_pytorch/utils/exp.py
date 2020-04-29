@@ -187,9 +187,7 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
               random_state=42, device='cuda', cuda='0'):
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
-    with open(os.path.join(save_dir, "params.json"), 'w') as params_file:
-        print(locals())
-        json.dump(locals(), params_file)
+    json.dump(locals(), open(os.path.join(save_dir, "params.json"), 'w'))
 
     train_metrics = list(train_metrics)
     val_metrics = list(val_metrics)
