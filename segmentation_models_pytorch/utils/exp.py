@@ -185,15 +185,17 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
               best_thresh_metrics=(('accuracy', 0.0, [], True), ),
               last_metrics=('accuracy',), n_splits=10, fold=0, val_freq=5, checkpoint_freq=50, num_epochs=200,
               random_state=42, device='cuda', cuda='0'):
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
+    with open(os.path.join(save_dir, "params.json"), 'w') as params_file:
+        json.dump(locals(), params_file)
+
     train_metrics = list(train_metrics)
     val_metrics = list(val_metrics)
     best_metrics = list(best_metrics)
     best_thresh_metrics = list(best_thresh_metrics)
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
-
-    if not os.path.exists(save_dir):
-        os.mkdir(save_dir)
 
     masks = sorted(list(os.listdir(seg_dir)))
     kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
@@ -260,17 +262,18 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
         if cur_epoch % val_freq == 0:
             valid_logs = valid_epoch.run(valid_loader)
             if cur_epoch % checkpoint_freq == 0:
-                save_last_checkpoint(model, last_metrics, valid_logs, cur_epoch, fold)
+                save_last_checkpoint(model, last_metrics, valid_logs, cur_epoch, fold, save_dir=save_dir)
 
             for i in range(len(best_metrics)):
                 metric, max_score, other_metrics, gt = best_metrics[i]
                 max_score = save_best_checkpoint(model, metric, max_score, valid_logs, cur_epoch, fold,
-                                                 other_metrics=other_metrics, gt=gt)
+                                                 save_dir=save_dir, other_metrics=other_metrics, gt=gt)
                 best_metrics[i] = metric, max_score, other_metrics, gt
 
             for i in range(len(best_thresh_metrics)):
                 metric, max_score, other_metrics, gt = best_thresh_metrics[i]
-                max_score = save_best_checkpoint(model, metric, max_score, valid_logs, cur_epoch, fold, gt=gt)
+                max_score = save_best_checkpoint(model, metric, max_score, valid_logs, cur_epoch, fold,
+                                                 save_dir=save_dir, gt=gt)
                 best_thresh_metrics[i] = metric, max_score, gt
 
 
