@@ -143,9 +143,9 @@ class Precision(base.Metric):
         return self.__name__ + "_" + str(self.threshold)
 
 
-metrics = {AUCROC.__name__: AUCROC,
-           IoU.__name__: IoU,
-           Fscore.__name__: Fscore,
-           Accuracy.__name__: Accuracy,
-           Recall.__name__: Recall,
-           Precision.__name__: Precision}
+metrics = {'aucroc': AUCROC,
+           'iou': IoU,
+           'fscore': Fscore,
+           'acc': Accuracy,
+           'recall': Recall,
+           'precision': Precision}
