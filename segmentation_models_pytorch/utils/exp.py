@@ -185,7 +185,8 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
               best_thresh_metrics=(('accuracy', 0.0, [], True), ),
               last_metrics=('accuracy',), n_splits=10, fold=0, val_freq=5, checkpoint_freq=50, num_epochs=200,
               random_state=42, device='cuda', cuda='0'):
-
+    train_metrics = list(train_metrics)
+    val_metrics = list(val_metrics)
     best_metrics = list(best_metrics)
     best_thresh_metrics = list(best_thresh_metrics)
 
