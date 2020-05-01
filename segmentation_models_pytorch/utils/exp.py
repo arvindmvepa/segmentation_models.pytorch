@@ -226,7 +226,7 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
     train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, num_workers=12)
     valid_loader = DataLoader(valid_dataset, batch_size=1, shuffle=False, num_workers=4)
 
-    loss = losses[loss[0]](pos_weight=get_pos_wt(masks_fps=train_dataset.masks_fps, c=pos_scale) ** loss[1])
+    loss = losses[loss[0]](pos_weight=get_pos_wt(masks_fps=train_dataset.masks_fps, c=pos_scale), **loss[1])
 
     for i in range(len(train_metrics)):
         train_metrics[i] = metrics[train_metrics[i][0]](**train_metrics[i][1])
