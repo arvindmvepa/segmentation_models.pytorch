@@ -15,20 +15,21 @@ import itertools
 from .losses import losses
 from .metrics import metrics
 from .optimizers import optimizers
+from segmentation_models_pytorch import decoders
 
 
-def get_neg_pos_ratio(masks_fps, seg_dir):
-    masks_flat = np.concatenate([np.load(os.path.join(seg_dir, mask_fps))
-                                 for mask_fps in masks_fps]).flatten()
+def get_neg_pos_ratio(masks_fps):
+    masks_flat = np.concatenate([np.load(mask_fp)
+                                 for mask_fp in masks_fps]).flatten()
     num_pos = float(np.sum(masks_flat))
     total = float(len(masks_flat))
     num_neg = total - num_pos
     return num_neg/num_pos
 
 
-def get_pos_wt(masks_fps, seg_dir, c=1.0):
+def get_pos_wt(masks_fps, c=1.0):
     if c:
-        neg_pos_ratio = get_neg_pos_ratio(masks_fps, seg_dir)
+        neg_pos_ratio = get_neg_pos_ratio(masks_fps)
         return c * neg_pos_ratio
     else:
         return 1.0
@@ -179,9 +180,10 @@ def get_preprocessing(preprocessing_fn):
 
 
 def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
-              save_dir='/root/exp', encoder='se_resnext50_32x4d', encoder_weights='imagenet', activation='sigmoid',
-              loss=('bce_lts', {}), optimizer=("adam", {}), bs=8, train_metrics=(('accuracy', {}), ),
-              val_metrics=(('accuracy', {}), ),  best_metrics=(('accuracy_0.5', 0.0, [], True), ),
+              save_dir='/root/exp', decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
+              activation='sigmoid', loss=('bce_lts', {}), pos_scale= None, optimizer=("adam", {"lr": 1e-4}),
+              lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8, train_metrics=(('accuracy', {}), ),
+              val_metrics=(('accuracy', {}), ), best_metrics=(('accuracy_0.5', 0.0, [], True), ),
               best_thresh_metrics=(('accuracy', 0.0, True), ), last_metrics=('accuracy',), n_splits=10, fold=0,
               val_freq=5, checkpoint_freq=50, num_epochs=200, random_state=42, device='cuda', cuda='0'):
     if not os.path.exists(save_dir):
@@ -201,12 +203,10 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
     train_ids = [masks[split_id] for split_id in split_ids[0]]
     val_ids = [masks[split_id] for split_id in split_ids[1]]
 
-    model = smp.Unet(
-        encoder_name=encoder,
-        encoder_weights=encoder_weights,
-        classes=1,
-        activation=activation,
-    )
+    model = decoders[decoder](encoder_name=encoder,
+                              encoder_weights=encoder_weights,
+                              classes=1,
+                              activation=activation)
     preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
     train_dataset = Dataset(
         data_dir,
@@ -226,7 +226,7 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
     train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, num_workers=12)
     valid_loader = DataLoader(valid_dataset, batch_size=1, shuffle=False, num_workers=4)
 
-    loss = losses[loss[0]](**loss[1])
+    loss = losses[loss[0]](pos_weight=get_pos_wt(masks_fps=train_dataset.masks_fps, c=pos_scale) ** loss[1])
 
     for i in range(len(train_metrics)):
         train_metrics[i] = metrics[train_metrics[i][0]](**train_metrics[i][1])
@@ -274,13 +274,11 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
                                                  save_dir=save_dir, gt=gt)
                 best_thresh_metrics[i] = metric, max_score, gt
 
-
-        if i == 200:
-            optimizer.param_groups[0]['lr'] = 1e-5
-            print('Decrease decoder learning rate to 1e-5!')
-        if i == 400:
-            optimizer.param_groups[0]['lr'] = 1e-6
-            print('Decrease decoder learning rate to 1e-6!')
+        for lr, epoch in lr_schedule:
+            if i == epoch:
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] = lr
+                print('Changed Decoder learning rate to {}!'.format(str(lr)))
 
 
 def save_best_checkpoint(model, metric, prev_max_score, valid_logs,
