@@ -185,7 +185,7 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
               lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8, train_metrics=(('accuracy', {}), ),
               val_metrics=(('accuracy', {}), ), best_metrics=(('accuracy_0.5', 0.0, [], True), ),
               best_thresh_metrics=(('accuracy', 0.0, True), ), last_metrics=('accuracy',), n_splits=10, fold=0,
-              val_freq=5, checkpoint_freq=50, num_epochs=200, random_state=42, device='cuda', cuda='0'):
+              val_freq=5, checkpoint_freq=50, num_epochs=200, random_state=42, device='cuda', cuda='0', save_net=True):
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
     json.dump(locals(), open(os.path.join(save_dir, "params.json"), 'w'))
@@ -261,18 +261,21 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
         if cur_epoch % val_freq == 0:
             valid_logs = valid_epoch.run(valid_loader)
             if cur_epoch % checkpoint_freq == 0:
-                save_last_checkpoint(model, last_metrics, valid_logs, cur_epoch, fold, save_dir=save_dir)
+                save_last_checkpoint(model, last_metrics, valid_logs, cur_epoch, fold, save_dir=save_dir,
+                                     save_net=save_net)
 
             for i in range(len(best_metrics)):
                 metric, max_score, other_metrics, gt = best_metrics[i]
                 max_score = save_best_checkpoint(model, metric, max_score, valid_logs, cur_epoch, fold,
-                                                 save_dir=save_dir, other_metrics=other_metrics, gt=gt)
+                                                 save_dir=save_dir, other_metrics=other_metrics, gt=gt,
+                                                 save_net=save_net)
                 best_metrics[i] = metric, max_score, other_metrics, gt
 
             for i in range(len(best_thresh_metrics)):
                 metric, max_score, gt = best_thresh_metrics[i]
                 max_score = save_best_checkpoint(model, metric, max_score, valid_logs, cur_epoch, fold,
-                                                 save_dir=save_dir, gt=gt)
+                                                 save_dir=save_dir, gt=gt,
+                                                 save_net=save_net)
                 best_thresh_metrics[i] = metric, max_score, gt
 
         for lr, epoch in lr_schedule:
@@ -282,13 +285,14 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
                 print('Changed Decoder learning rate to {}!'.format(str(lr)))
 
 
-def save_best_checkpoint(model, metric, prev_max_score, valid_logs,
-                         cur_epoch, cur_fold, save_dir, other_metrics=None, gt=True):
+def save_best_checkpoint(model, metric, prev_max_score, valid_logs, cur_epoch, cur_fold, save_dir, other_metrics=None,
+                         gt=True, save_net=True):
     if (metric in valid_logs):
         if ((valid_logs[metric] > prev_max_score) if gt
         else (valid_logs[metric] < prev_max_score)):
             max_score = valid_logs[metric]
-            torch.save(model, os.path.join(save_dir, 'best_model_' + metric + '.pth'))
+            if save_net:
+                torch.save(model, os.path.join(save_dir, 'best_model_' + metric + '.pth'))
             metrics = {metric: max_score, "epoch": cur_epoch, 'fold': cur_fold}
             if other_metrics:
                 metrics.update({valid_metric: valid_logs[valid_metric]
@@ -302,8 +306,8 @@ def save_best_checkpoint(model, metric, prev_max_score, valid_logs,
     return prev_max_score
 
 
-def save_best_thresh_checkpoint(model, metric, prev_max_score, valid_logs,
-                                cur_epoch, cur_fold, save_dir, gt=True):
+def save_best_thresh_checkpoint(model, metric, prev_max_score, valid_logs, cur_epoch, cur_fold, save_dir, gt=True,
+                                save_net=True):
     metrics = {valid_metric: valid_logs[valid_metric]
                for valid_metric in valid_logs.keys() if metric in valid_metric}
     if metrics:
@@ -317,8 +321,8 @@ def save_best_thresh_checkpoint(model, metric, prev_max_score, valid_logs,
             metric_names = list(metrics.keys())
             metric_name = metric_names[np.argmax(metric_vals)]
 
-            torch.save(model, os.path.join(save_dir,
-                                           'best_thresh_model_' + metric + '.pth'))
+            if save_net:
+                torch.save(model, os.path.join(save_dir, 'best_thresh_model_' + metric + '.pth'))
             metrics = {metric: str(max_score), "epoch": cur_epoch, 'fold': cur_fold,
                        "thresh": metric_name}
             with open(os.path.join(save_dir, 'thresh_' + metric + '.json'), 'w') as outfile:
@@ -328,9 +332,10 @@ def save_best_thresh_checkpoint(model, metric, prev_max_score, valid_logs,
     return prev_max_score
 
 
-def save_last_checkpoint(model, metrics, valid_logs, cur_epoch, cur_fold, save_dir):
-    torch.save(model, os.path.join(save_dir, str(cur_epoch) + '.pth'))
-    torch.save(model, os.path.join(save_dir, 'last.pth'))
+def save_last_checkpoint(model, metrics, valid_logs, cur_epoch, cur_fold, save_dir, save_net=True):
+    if save_net:
+        torch.save(model, os.path.join(save_dir, str(cur_epoch) + '.pth'))
+        torch.save(model, os.path.join(save_dir, 'last.pth'))
 
     metrics = {valid_metric: valid_logs[valid_metric]
                for metric in metrics
