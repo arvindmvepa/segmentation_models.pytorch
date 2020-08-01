@@ -179,7 +179,19 @@ def get_preprocessing(preprocessing_fn):
     return albu.Compose(_transform)
 
 
+def test_net(data_dir='/root/data/vessels/test/images', seg_dir='/root/data/vessels/test/gt',
+             save_dir='/root/exp', decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
+             activation='sigmoid', loss=('bce_lts', {}), pos_scale= None, optimizer=("adam", {"lr": 1e-4}),
+             lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8, train_metrics=(('accuracy', {}), ),
+             val_metrics=(('accuracy', {}), ), best_metrics=(('accuracy_0.5', 0.0, [], True), ),
+             best_thresh_metrics=(('accuracy', 0.0, True), ), last_metrics=('accuracy',), num_epochs=200,
+             random_state=42, device='cuda', cuda='0'):
+
+# create the test predictions code as well as code for training full model
+# once you finish the code, in theory you can start training ensemble as well while you finish up the paper
+# just need saved predictions for visuals
 def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
+              test_data_dir='/root/data/vessels/test/images', test_seg_dir='/root/data/vessels/test/gt',
               save_dir='/root/exp', decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
               activation='sigmoid', loss=('bce_lts', {}), pos_scale= None, optimizer=("adam", {"lr": 1e-4}),
               lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8, train_metrics=(('accuracy', {}), ),
@@ -230,10 +242,12 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
                            **loss[1])
 
     for i in range(len(train_metrics)):
-        train_metrics[i] = metrics[train_metrics[i][0]](**train_metrics[i][1])
+        if train_metrics[i] != 'inf_time':
+            train_metrics[i] = metrics[train_metrics[i][0]](**train_metrics[i][1])
 
     for i in range(len(val_metrics)):
-        val_metrics[i] = metrics[val_metrics[i][0]](**val_metrics[i][1])
+        if val_metrics[i] != 'inf_time':
+            val_metrics[i] = metrics[val_metrics[i][0]](**val_metrics[i][1])
 
     optimizer = optimizers[optimizer[0]](params=model.parameters(), **optimizer[1])
 
@@ -273,6 +287,7 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
 
             for i in range(len(best_thresh_metrics)):
                 metric, max_score, gt = best_thresh_metrics[i]
+                # bug, should use the `save_best_thresh_checkpoint`
                 max_score = save_best_checkpoint(model, metric, max_score, valid_logs, cur_epoch, fold,
                                                  save_dir=save_dir, gt=gt,
                                                  save_net=save_net)
