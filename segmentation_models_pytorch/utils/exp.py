@@ -4,7 +4,6 @@ import cv2
 from sklearn.model_selection import KFold
 
 from torch.utils.data import DataLoader
-from torch.utils.data import Dataset as BaseDataset
 import albumentations as albu
 
 import torch
@@ -12,6 +11,7 @@ import numpy as np
 import segmentation_models_pytorch as smp
 import json
 import itertools
+from .dataset import Dataset
 from .losses import losses
 from .metrics import metrics
 from .optimizers import optimizers
@@ -33,74 +33,6 @@ def get_pos_wt(masks_fps, c=1.0):
         return c * neg_pos_ratio
     else:
         return 1.0
-
-
-class Dataset(BaseDataset):
-    """
-
-    Args:
-        images_dir (str): path to images folder
-        masks_dir (str): path to segmentation masks folder
-        class_values (list): values of classes to extract from segmentation mask
-        augmentation (albumentations.Compose): data transfromation pipeline
-            (e.g. flip, scale, etc.)
-        preprocessing (albumentations.Compose): data preprocessing
-            (e.g. noralization, shape manipulation, etc.)
-
-    """
-
-    CLASSES = ["vessel"]
-
-    def __init__(
-            self,
-            images_dir,
-            masks_dir,
-            ids=None,
-            augmentation=None,
-            preprocessing=None,
-    ):
-        if not ids:
-            # Using numpy arrays
-            self.ids = os.listdir(masks_dir)
-        else:
-            self.ids = ids
-
-        self.ids = [id[:-4] for id in self.ids]
-        self.images_fps = [os.path.join(images_dir, image_id) for image_id in self.ids]
-        self.masks_fps = [os.path.join(masks_dir, image_id + ".npy") for image_id in self.ids]
-
-        # UPDATED: mask is equivalent 1
-        self.class_values = [1]
-
-        self.augmentation = augmentation
-        self.preprocessing = preprocessing
-
-    def __getitem__(self, i):
-
-        # read data
-        image = cv2.imread(self.images_fps[i])
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-        mask = np.load(self.masks_fps[i])
-
-        # extract certain classes from mask (e.g. cars)
-        masks = [(mask == v) for v in self.class_values]
-        mask = np.stack(masks, axis=-1).astype('float')
-
-        # apply augmentations
-        if self.augmentation:
-            sample = self.augmentation(image=image, mask=mask)
-            image, mask = sample['image'], sample['mask']
-
-        # apply preprocessing
-        if self.preprocessing:
-            sample = self.preprocessing(image=image, mask=mask)
-            image, mask = sample['image'], sample['mask']
-
-        return image, mask
-
-    def __len__(self):
-        return len(self.ids)
 
 
 def get_training_augmentation():
@@ -179,17 +111,55 @@ def get_preprocessing(preprocessing_fn):
     return albu.Compose(_transform)
 
 
-def test_net(data_dir='/root/data/vessels/test/images', seg_dir='/root/data/vessels/test/gt',
-             save_dir='/root/exp', decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
-             activation='sigmoid', loss=('bce_lts', {}), pos_scale= None, optimizer=("adam", {"lr": 1e-4}),
-             lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8, train_metrics=(('accuracy', {}), ),
-             val_metrics=(('accuracy', {}), ), best_metrics=(('accuracy_0.5', 0.0, [], True), ),
-             best_thresh_metrics=(('accuracy', 0.0, True), ), last_metrics=('accuracy',), num_epochs=200,
-             random_state=42, device='cuda', cuda='0'):
+def test_net(model, encoder='se_resnext50_32x4d', encoder_weights='imagenet', loss=('bce_lts', {}),
+             data_dir='/root/data/vessels/test/images', seg_dir='/root/data/vessels/test/gt',
+             save_dir='/root/output/vessels', save_preds=False, bs=1, test_metrics=(('accuracy', {}), ),
+             device='cuda', cuda='0'):
 
-# create the test predictions code as well as code for training full model
-# once you finish the code, in theory you can start training ensemble as well while you finish up the paper
-# just need saved predictions for visuals
+    os.environ['CUDA_VISIBLE_DEVICES'] = cuda
+
+    if isinstance(model, str):
+        model = torch.load(model)
+    else:
+        raise ValueError("Model string needed!")
+
+    preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
+
+    # create test dataset
+    test_dataset = Dataset(
+        data_dir,
+        seg_dir,
+        augmentation=get_validation_augmentation(),
+        preprocessing=get_preprocessing(preprocessing_fn),
+    )
+
+    test_dataloader = DataLoader(test_dataset, batch_size=bs, shuffle=False, num_workers=4)
+
+    for i in range(len(test_metrics)):
+        if test_metrics[i] != 'inf_time':
+            test_metrics[i] = metrics[test_metrics[i][0]](**test_metrics[i][1])
+
+    # evaluate model on test set
+    test_epoch = smp.utils.test.TestEpoch(
+        model=model,
+        loss=loss,
+        metrics=test_metrics,
+        device=device,
+        verbose=True,
+        save_preds_dir=os.path.join(save_dir, "preds") if save_preds else None
+    )
+
+    test_logs = test_epoch.run(test_dataloader)
+
+    test_metrics = {test_metric: test_logs[test_metric]
+                    for metric in metrics
+                    for test_metric in test_logs.keys() if metric in test_metric}
+
+    test_metrics.update({"model": model})
+    with open(os.path.join(save_dir, 'metrics.json'), 'w') as outfile:
+        json.dump(test_metrics, outfile)
+
+
 def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
               test_data_dir='/root/data/vessels/test/images', test_seg_dir='/root/data/vessels/test/gt',
               save_dir='/root/exp', decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
@@ -197,7 +167,8 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
               lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8, train_metrics=(('accuracy', {}), ),
               val_metrics=(('accuracy', {}), ), best_metrics=(('accuracy_0.5', 0.0, [], True), ),
               best_thresh_metrics=(('accuracy', 0.0, True), ), last_metrics=('accuracy',), n_splits=10, fold=0,
-              val_freq=5, checkpoint_freq=50, num_epochs=200, random_state=42, device='cuda', cuda='0', save_net=True):
+              val_freq=5, checkpoint_freq=50, num_epochs=200, test_type="last", random_state=42, device='cuda',
+              cuda='0', save_net=True):
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
     json.dump(locals(), open(os.path.join(save_dir, "params.json"), 'w'))
@@ -209,17 +180,22 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
 
-    masks = sorted(list(os.listdir(seg_dir)))
-    kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
-    split_ids = list(kf.split(masks))[fold]
-    train_ids = [masks[split_id] for split_id in split_ids[0]]
-    val_ids = [masks[split_id] for split_id in split_ids[1]]
-
     model = decoders[decoder](encoder_name=encoder,
                               encoder_weights=encoder_weights,
                               classes=1,
                               activation=activation)
     preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
+
+    if n_splits:
+        kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
+        masks = sorted(list(os.listdir(seg_dir)))
+        split_ids = list(kf.split(masks))[fold]
+        train_ids = [masks[split_id] for split_id in split_ids[0]]
+        val_ids = [masks[split_id] for split_id in split_ids[1]]
+    else:
+        train_ids = None
+        val_ids = None
+
     train_dataset = Dataset(
         data_dir,
         seg_dir,
