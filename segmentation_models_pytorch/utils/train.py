@@ -40,7 +40,7 @@ class Epoch:
         logs = {}
         loss_meter = AverageValueMeter()
         metrics_meters = {metric.name : AverageValueMeter() for metric in self.metrics if metric != "inf_time"}
-        metrics_meters = metrics_meters.update({"inf_time": 0.0} if "inf_time" in self.metrics else {})
+        metrics_meters.update({"inf_time": 0.0} if "inf_time" in self.metrics else {})
 
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
             for x, y in iterator:
