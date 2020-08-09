@@ -114,7 +114,7 @@ def get_preprocessing(preprocessing_fn):
 def test_net(model, encoder='se_resnext50_32x4d', encoder_weights='imagenet', loss=('bce_lts', {}),
              data_dir='/root/data/vessels/test/images', seg_dir='/root/data/vessels/test/gt',
              save_dir='/root/output/vessels', save_preds=False, bs=1, test_metrics=(('accuracy', {}), ),
-             device='cuda', cuda='0'):
+             device='cuda', cuda='0', *args, **kwargs):
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
 

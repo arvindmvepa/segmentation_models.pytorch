@@ -35,7 +35,7 @@ class TestEpoch(ValidEpoch):
                     if metric_fn == "inf_time":
                         metrics_meters[metric_fn.name] = metrics_meters[metric_fn.name] + inf_time
                     else:
-                        metric_value = metric_fn(y_pred, y).cpu().detach().numpy()
+                        metric_va3lue = metric_fn(y_pred, y).cpu().detach().numpy()
                         metrics_meters[metric_fn.name].add(metric_value)
                 metrics_logs = {k: v.mean for k, v in metrics_meters.items()}
                 logs.update(metrics_logs)
