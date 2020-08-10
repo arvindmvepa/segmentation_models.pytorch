@@ -50,6 +50,7 @@ class TestEpoch(ValidEpoch):
                 if self.save_preds_dir:
                     test_files = dataloader.dataset.ids
                     test_file = test_files[i]
-                    np.save(os.path.join(self.save_preds_dir, test_file), y_pred)
+                    y_pred_values = y_pred.cpu().detach().numpy()
+                    np.save(os.path.join(self.save_preds_dir, test_file), y_pred_values)
 
         return logs
