@@ -117,6 +117,15 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
              device='cuda', cuda='0', *args, **kwargs):
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    if save_preds:
+        save_preds_dir = os.path.join(save_dir, "preds")
+        if not os.path.exists(save_preds_dir):
+            os.makedirs(save_preds_dir)
+    else:
+        save_preds_dir = None
+
 
     model = torch.load(model_path)
 
@@ -145,7 +154,7 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
         metrics=test_metrics,
         device=device,
         verbose=True,
-        save_preds_dir=os.path.join(save_dir, "preds") if save_preds else None
+        save_preds_dir=save_preds_dir
     )
 
     test_logs = test_epoch.run(test_dataloader)
