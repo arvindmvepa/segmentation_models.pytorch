@@ -20,7 +20,8 @@ class Epoch:
         self.model.to(self.device)
         self.loss.to(self.device)
         for metric in self.metrics:
-            metric.to(self.device)
+            if metric != "inf_time":
+                metric.to(self.device)
 
     def _format_logs(self, logs):
         str_logs = ['{} - {:.4}'.format(k, v) for k, v in logs.items()]
