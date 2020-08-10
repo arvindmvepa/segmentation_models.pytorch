@@ -1,6 +1,7 @@
 import sys
 import torch
 from tqdm import tqdm as tqdm
+import numpy as np
 from .meter import AverageValueMeter
 import time
 
@@ -41,7 +42,7 @@ class Epoch:
         logs = {}
         loss_meter = AverageValueMeter()
         metrics_meters = {metric.name : AverageValueMeter() for metric in self.metrics if metric != "inf_time"}
-        metrics_meters.update({"inf_time": 0.0} if "inf_time" in self.metrics else {})
+        metrics_meters.update({"inf_time": []} if "inf_time" in self.metrics else {})
 
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
             for x, y in iterator:
@@ -57,11 +58,13 @@ class Epoch:
                 # update metrics logs
                 for metric_fn in self.metrics:
                     if metric_fn == "inf_time":
-                        metrics_meters[metric_fn] = metrics_meters[metric_fn] + inf_time
+                        metrics_meters[metric_fn] = [metrics_meters[metric_fn]] + inf_time
                     else:
                         metric_value = metric_fn(y_pred, y).cpu().detach().numpy()
                         metrics_meters[metric_fn.name].add(metric_value)
-                metrics_logs = {k: v.mean for k, v in metrics_meters.items()}
+                metrics_logs = {k: v.mean for k, v in metrics_meters.items() if k != 'inf_time'}
+                if 'inf_time' in metrics_meters:
+                    metrics_logs.update({'inf_time': np.mean(metrics_meters['inf_time'])})
                 logs.update(metrics_logs)
 
                 if self.verbose:
