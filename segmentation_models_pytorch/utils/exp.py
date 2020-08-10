@@ -111,17 +111,14 @@ def get_preprocessing(preprocessing_fn):
     return albu.Compose(_transform)
 
 
-def test_net(model, encoder='se_resnext50_32x4d', encoder_weights='imagenet', loss=('bce_lts', {}),
+def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', loss=('bce_lts', {}),
              data_dir='/root/data/vessels/test/images', seg_dir='/root/data/vessels/test/gt',
              save_dir='/root/output/vessels', save_preds=False, bs=1, test_metrics=(('accuracy', {}), ),
              device='cuda', cuda='0', *args, **kwargs):
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
 
-    if isinstance(model, str):
-        model = torch.load(model)
-    else:
-        raise ValueError("Model string needed!")
+    model = torch.load(model_path)
 
     preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
 
@@ -157,7 +154,7 @@ def test_net(model, encoder='se_resnext50_32x4d', encoder_weights='imagenet', lo
                     for metric in metrics
                     for test_metric in test_logs.keys() if metric in test_metric}
 
-    test_metrics.update({"model": model})
+    test_metrics.update({"model": model_path})
     with open(os.path.join(save_dir, 'metrics.json'), 'w') as outfile:
         json.dump(test_metrics, outfile)
 
