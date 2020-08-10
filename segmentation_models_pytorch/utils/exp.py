@@ -139,6 +139,8 @@ def test_net(model, encoder='se_resnext50_32x4d', encoder_weights='imagenet', lo
         if test_metrics[i] != 'inf_time':
             test_metrics[i] = metrics[test_metrics[i][0]](**test_metrics[i][1])
 
+    loss = losses[loss[0]](**loss[1])
+
     # evaluate model on test set
     test_epoch = smp.utils.test.TestEpoch(
         model=model,
