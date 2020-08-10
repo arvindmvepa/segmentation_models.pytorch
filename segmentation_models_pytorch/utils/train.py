@@ -58,7 +58,7 @@ class Epoch:
                 # update metrics logs
                 for metric_fn in self.metrics:
                     if metric_fn == "inf_time":
-                        metrics_meters[metric_fn] = [metrics_meters[metric_fn]] + inf_time
+                        metrics_meters[metric_fn] = metrics_meters[metric_fn] + [inf_time]
                     else:
                         metric_value = metric_fn(y_pred, y).cpu().detach().numpy()
                         metrics_meters[metric_fn.name].add(metric_value)
