@@ -35,15 +35,15 @@ def get_pos_wt(masks_fps, c=1.0):
         return 1.0
 
 
-def get_training_augmentation():
+def get_training_augmentation(height=1024, width=1024):
     train_transform = [
 
         albu.HorizontalFlip(p=0.5),
 
         albu.ShiftScaleRotate(scale_limit=0.5, rotate_limit=0, shift_limit=0.1, p=1, border_mode=0),
 
-        albu.PadIfNeeded(min_height=512, min_width=512, always_apply=True, border_mode=0),
-        albu.Resize(height=512, width=512, always_apply=True),
+        albu.PadIfNeeded(min_height=height, min_width=width, always_apply=True, border_mode=0),
+        albu.Resize(height=height, width=width, always_apply=True),
         # albu.RandomCrop(height=320, width=320, always_apply=True),
 
         albu.IAAAdditiveGaussianNoise(p=0.2),
@@ -78,12 +78,12 @@ def get_training_augmentation():
     return albu.Compose(train_transform)
 
 
-def get_validation_augmentation():
+def get_validation_augmentation(height=1024, width=1024):
     """Add paddings to make image shape divisible by 32"""
     test_transform = [
         # albu.PadIfNeeded(384, 480)
-        albu.PadIfNeeded(min_height=512, min_width=512, always_apply=True, border_mode=0),
-        albu.Resize(height=512, width=512, always_apply=True),
+        albu.PadIfNeeded(min_height=height, min_width=width, always_apply=True, border_mode=0),
+        albu.Resize(height=height, width=width, always_apply=True),
     ]
     return albu.Compose(test_transform)
 
@@ -111,10 +111,10 @@ def get_preprocessing(preprocessing_fn):
     return albu.Compose(_transform)
 
 
-def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', loss=('bce_lts', {}),
-             data_dir='/root/data/vessels/test/images', seg_dir='/root/data/vessels/test/gt',
-             save_dir='/root/output/vessels', save_preds=False, bs=1, test_metrics=(('accuracy', {}), ),
-             device='cuda', cuda='0', *args, **kwargs):
+def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=1024, width=1024,
+             loss=('bce_lts', {}), test_data_dir='/root/data/vessels/test/images',
+             test_seg_dir='/root/data/vessels/test/gt', save_dir='/root/output/vessels', save_preds=False, bs=1,
+             test_metrics=(('accuracy', {}), ), device='cuda', cuda='0', *args, **kwargs):
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
     if not os.path.exists(save_dir):
@@ -133,9 +133,9 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
 
     # create test dataset
     test_dataset = Dataset(
-        data_dir,
-        seg_dir,
-        augmentation=get_validation_augmentation(),
+        test_data_dir,
+        test_seg_dir,
+        augmentation=get_validation_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
     )
 
@@ -169,14 +169,13 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
 
 
 def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
-              test_data_dir='/root/data/vessels/test/images', test_seg_dir='/root/data/vessels/test/gt',
               save_dir='/root/exp', decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
-              activation='sigmoid', loss=('bce_lts', {}), pos_scale= None, optimizer=("adam", {"lr": 1e-4}),
-              lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8, train_metrics=(('accuracy', {}), ),
-              val_metrics=(('accuracy', {}), ), best_metrics=(('accuracy_0.5', 0.0, [], True), ),
-              best_thresh_metrics=(('accuracy', 0.0, True), ), last_metrics=('accuracy',), n_splits=10, fold=0,
-              val_freq=5, checkpoint_freq=50, num_epochs=200, test_type="last", random_state=42, device='cuda',
-              cuda='0', save_net=True):
+              activation='sigmoid', height=1024, width=1024, loss=('bce_lts', {}), pos_scale= None,
+              optimizer=("adam", {"lr": 1e-4}), lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8,
+              train_metrics=(('accuracy', {}), ), val_metrics=(('accuracy', {}), ),
+              best_metrics=(('accuracy_0.5', 0.0, [], True), ), best_thresh_metrics=(('accuracy', 0.0, True), ),
+              last_metrics=('accuracy',), n_splits=10, fold=0, val_freq=5, checkpoint_freq=50, num_epochs=200,
+              test_type="last", random_state=42, device='cuda', cuda='0', save_net=True):
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
     json.dump(locals(), open(os.path.join(save_dir, "params.json"), 'w'))
@@ -207,14 +206,14 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
     train_dataset = Dataset(
         data_dir,
         seg_dir,
-        augmentation=get_training_augmentation(),
+        augmentation=get_training_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
         ids=train_ids,
     )
     valid_dataset = Dataset(
         data_dir,
         seg_dir,
-        augmentation=get_validation_augmentation(),
+        augmentation=get_validation_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
         ids=val_ids,
     )
