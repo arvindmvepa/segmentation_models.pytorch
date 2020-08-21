@@ -4,7 +4,7 @@ import os
 
 
 def run_test(model, **params):
-    test_net(model, *params)
+    test_net(model, **params)
 
 
 def run_exp(exp_dir, **search_params):
