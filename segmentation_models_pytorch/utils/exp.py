@@ -112,9 +112,9 @@ def get_preprocessing(preprocessing_fn):
 
 
 def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=1024, width=1024,
-             loss=('bce_lts', {}), test_data_dir='/root/data/vessels/test/images',
-             test_seg_dir='/root/data/vessels/test/gt', save_dir='/root/output/vessels', save_preds=False, bs=1,
-             test_metrics=(('accuracy', {}), ), device='cuda', cuda='0', *args, **kwargs):
+             loss=('bce_lts', {}), data_dir='/root/data/vessels/test/images', seg_dir='/root/data/vessels/test/gt',
+             save_dir='/root/output/vessels', save_preds=False, bs=1, test_metrics=(('accuracy', {}), ), device='cuda',
+             cuda='0', *args, **kwargs):
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
     if not os.path.exists(save_dir):
@@ -133,8 +133,8 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
 
     # create test dataset
     test_dataset = Dataset(
-        test_data_dir,
-        test_seg_dir,
+        data_dir,
+        seg_dir,
         augmentation=get_validation_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
     )
