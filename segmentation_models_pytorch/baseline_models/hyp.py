@@ -8,7 +8,8 @@ from ..utils.dataset import Dataset
 from sklearn.metrics import roc_auc_score
 
 
-def hyp_search(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt', n_splits=10, fold=0,
+def hyp_search(data_dir='/root/data/vessels/train/images',
+               seg_dir='/root/data/vessels/train/gt', n_splits=10, fold=0,
                random_state=42):
     if n_splits:
         kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
@@ -44,6 +45,8 @@ def hyp_search(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/v
                     predictions = []
                     targets = []
                     for img, target in iterator:
+                        img = img.cpu().detach().numpy()[0,:,:,0]
+                        target = target.cpu().detach().numpy()[0,:,:,0]
                         prediction = matched_filter(image=img, length=length, sigma=sigma/10, coefficient=threshold/10)
                         predictions.append(prediction)
                         targets.append(target)
