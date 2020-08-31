@@ -15,7 +15,7 @@ def hyp_search(data_dir='/root/data/vessels/train/images',
         kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
         masks = sorted(list(os.listdir(seg_dir)))
         split_ids = list(kf.split(masks))[fold]
-        train_ids = [masks[split_id] for split_id in split_ids[0]][:2]
+        train_ids = [masks[split_id] for split_id in split_ids[0]]
         val_ids = [masks[split_id] for split_id in split_ids[1]]
 
     train_dataset = Dataset(
