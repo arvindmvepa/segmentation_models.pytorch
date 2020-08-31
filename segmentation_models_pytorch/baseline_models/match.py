@@ -1,11 +1,10 @@
 import numpy as np
 import cv2
 import math
-from sklearn.metrics import precision_recall_fscore_support, cohen_kappa_score, roc_auc_score, confusion_matrix
 
 
 # based on code here: https://github.com/fierval/retina/blob/master/DiabeticRetinopathy/Refactoring/kobra/imaging.py
-def matched_filter(img, target,mask = None, length = 9, sigma = 1.5, w = 31, coefficient = 1.5 ):
+def matched_filter(image, length = 9, sigma = 1.5, w = 31, coefficient = 1.5):
     def _filter_kernel_mf_fdog(length, sigma, t = 3, mf = True):
         dim_y = int(length)
         dim_x = int(2 * t * sigma)
@@ -117,13 +116,8 @@ def matched_filter(img, target,mask = None, length = 9, sigma = 1.5, w = 31, coe
             if inbounds(img.shape, (y-1, x-1)):
                 setlable(img, labimg, x-1, y-1,label, size)
 
-    #print(img.shape)
-    #print(type(img))
-    image = img[:,:,1] #use green channelheight, wei
     height, weight = image.shape[:2]
     image = 255 - image
-    if mask is not None:
-        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
 
     # generate Gaussian filter and first-order derivative of Gaussian filter.
     #fdog = matched.fdog_filter_kernel()
@@ -153,15 +147,6 @@ def matched_filter(img, target,mask = None, length = 9, sigma = 1.5, w = 31, coe
     out = np.zeros(H.shape)
     out[H > T] = 255
 
-
-    # using the mask image to truncate the value outside the reina.
-    if mask is not None:
-        laplacian = cv2.Laplacian(mask, cv2.CV_64F)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(7,7))
-        laplacian = cv2.dilate(laplacian,kernel,iterations = 4)
-        H[(mask == 0) + (laplacian != 0)] = 0
-        out[(mask == 0) + (laplacian != 0)] = 0
-
     # get rid of the segment less than 10 pixel
     lab = 1
     label = np.zeros(out.shape)
@@ -180,77 +165,4 @@ def matched_filter(img, target,mask = None, length = 9, sigma = 1.5, w = 31, coe
             if num[int(label[y][x]-1)] <= 10:
                 out[y][x] = 0
 
-    prediction_flat = out.flatten() / 255
-    prediction_flat = prediction_flat.astype(int)
-
-    prediction_flat = np.array(prediction_flat)
-    #target = cv2.imread(sys.argv[2])
-    target_flat = target[:,:,0] / 255
-    #target_flat = np.round(target.flatten())
-    target_flat = target_flat.astype(int)
-    target_flat = target_flat.flatten()
-
-    auc_score = roc_auc_score(target_flat, prediction_flat)
-
-    rounded_prediction_flat = np.round(prediction_flat)
-    (precision, recall, fbeta_score, _) = precision_recall_fscore_support(target_flat,
-                                                                                  rounded_prediction_flat,
-                                                                                  average='binary')
-    tn, fp, fn, tp = confusion_matrix(target_flat, rounded_prediction_flat).ravel()
-    kappa = cohen_kappa_score(target_flat, rounded_prediction_flat)
-    #acc = float(tp + tn) / float(tp + tn + fp + fn)
-    #specificity = float(tn) / float(tn + fp)
-
-    #print("tn",type(tn),tn)
-    #print("fp",type(fp),fp)
-    #print("fn",type(fn),fn)
-    #print("tp",type(tp),tp)
-    #print("acc",type(acc),acc)
-    #print("specificity",type(specificity),specificity)
-
-    # generate the output images.
-    #cv2.imwrite("Final_01.jpg", out)
-    #cv2.imwrite("MF_01.jpg" , H)
-    return out, tn, fp, fn, tp
-
-img1 = np.array(Image.open("/Users/scalzo/Desktop/vessel-seg/data/DSA/1.jpg"))
-img2 = np.array(Image.open("/Users/scalzo/Desktop/vessel-seg/data/DSA/2.jpg"))
-img3 = np.array(Image.open("/Users/scalzo/Desktop/vessel-seg/data/DSA/3.jpg"))
-
-target1 = np.array(Image.open("/Users/scalzo/Desktop/vessel-seg/data/DSA/1_target.jpg"))
-target2 = np.array(Image.open("/Users/scalzo/Desktop/vessel-seg/data/DSA/2_target.jpg"))
-target3 = np.array(Image.open("/Users/scalzo/Desktop/vessel-seg/data/DSA/3_target.jpg"))
-
-acc_max = 0
-length_max = 0
-sigma_max = 0
-threshold_max = 0
-
-# TO DO:
-# make sure to make the appropriate changes for DSA dataset
-# get the correct metrics
-# seems to only check a few images,  make sure to create 3 validation splits and get the average of best thresholds
-# make sure to verify on test set
-
-for length in range(3,13,1):
-    for sigma in range(6,25,1):
-        for threshold in range(6,36,3):
-            tn1,fp1,fn1,tp1=matched_filter(img=img1, target=target1,length = length, sigma = sigma/10, coefficient = threshold/10)
-            tn2,fp2,fn2,tp2=matched_filter(img=img2, target=target2,length = length, sigma = sigma/10, coefficient = threshold/10)
-            tn3,fp3,fn3,tp3=matched_filter(img=img3, target=target3,length = length, sigma = sigma/10, coefficient = threshold/10)
-            tn_all = tn1+tn2+tn3
-            fp_all = fp1+fp2+fp3
-            fn_all = fn1+fn2+fn3
-            tp_all = tp1+tp2+tp3
-            acc = float(tp_all + tn_all) / float(tp_all + tn_all + fp_all + fn_all)
-            print("accuracy",acc)
-            if acc > acc_max:
-                acc_max = acc
-                length_max = length
-                sigma_max = sigma
-                threshold_max = threshold
-
-print("acc_max",type(acc_max),acc_max)
-print("length_max",type(length_max),length_max)
-print("sigma_max",type(sigma_max),sigma_max)
-print("threshold_max",type(threshold_max),threshold_max)
+    return out/255.0
