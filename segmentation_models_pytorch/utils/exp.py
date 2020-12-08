@@ -101,10 +101,11 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
 
     if n_splits:
         kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
-        masks = sorted(list(os.listdir(val_seg_dir if val_seg_dir else seg_dir)))
-        split_ids = list(kf.split(masks))[fold]
-        train_ids = [masks[split_id] for split_id in split_ids[0]]
-        val_ids = [masks[split_id] for split_id in split_ids[1]]
+        masks = sorted(list(os.listdir(seg_dir)))
+        val_masks = sorted(list(os.listdir(val_seg_dir if val_seg_dir else seg_dir)))
+        split_ids = list(kf.split(val_masks))[fold]
+        val_ids = [val_masks[split_id] for split_id in split_ids[1]]
+        train_ids = [mask for mask in masks if mask not in val_ids]
     else:
         train_ids = None
         val_ids = None
