@@ -74,7 +74,7 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
         json.dump(test_metrics, outfile)
 
 
-def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
+def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt', val_seg_dir=None,
               save_dir='/root/exp', decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
               activation='sigmoid', height=1024, width=1024, loss=('bce_lts', {}), pos_scale= None,
               optimizer=("adam", {"lr": 1e-4}), lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8,
@@ -101,7 +101,7 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
 
     if n_splits:
         kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
-        masks = sorted(list(os.listdir(seg_dir)))
+        masks = sorted(list(os.listdir(val_seg_dir if val_seg_dir else seg_dir)))
         split_ids = list(kf.split(masks))[fold]
         train_ids = [masks[split_id] for split_id in split_ids[0]]
         val_ids = [masks[split_id] for split_id in split_ids[1]]
