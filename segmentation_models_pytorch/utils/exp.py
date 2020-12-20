@@ -131,7 +131,8 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
     valid_loader = DataLoader(valid_dataset, batch_size=1, shuffle=False, num_workers=4)
 
     loss = losses[loss[0]](pos_weight=torch.FloatTensor([get_pos_wt(masks_fps=train_dataset.masks_fps, c=pos_scale)]),
-                           reduction="none", **loss[1])
+                           #reduction="none",
+                           **loss[1])
 
     for i in range(len(train_metrics)):
         if train_metrics[i] != 'inf_time':
