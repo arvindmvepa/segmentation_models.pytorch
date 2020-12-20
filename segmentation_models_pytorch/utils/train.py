@@ -97,13 +97,6 @@ class TrainEpoch(Epoch):
         end = time.time()
         inf_time = end - start
         loss = self.loss(prediction, y)
-        print(wt)
-        print(torch.mean(loss * 1.0))
-        print(torch.mean(torch.sum(loss * wt)))
-        print(torch.mean(loss * wt))
-        print(torch.mean(loss))
-        #loss = torch.mean(torch.sum(loss * wt))
-        #loss = torch.mean(loss)
         loss = torch.mean(loss * wt)
         loss.backward()
         self.optimizer.step()
@@ -132,5 +125,5 @@ class ValidEpoch(Epoch):
             end = time.time()
             inf_time = end - start
             loss = self.loss(prediction, y)
-            #loss = torch.sum(loss * wt) / torch.sum(wt)
+            loss = torch.mean(loss * wt)
         return loss, prediction, inf_time
