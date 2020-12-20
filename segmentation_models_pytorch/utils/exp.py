@@ -74,7 +74,8 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
         json.dump(test_metrics, outfile)
 
 
-def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt', val_seg_dir=None,
+def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
+              val_seg_dir=None, wt_dir=None,
               save_dir='/root/exp', decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
               activation='sigmoid', height=1024, width=1024, loss=('bce_lts', {}), pos_scale= None,
               optimizer=("adam", {"lr": 1e-4}), lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8,
@@ -113,6 +114,7 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
     train_dataset = Dataset(
         data_dir,
         seg_dir,
+        wt_dir=wt_dir,
         augmentation=get_training_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
         ids=train_ids,
