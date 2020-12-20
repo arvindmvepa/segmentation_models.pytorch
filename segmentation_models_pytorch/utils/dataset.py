@@ -67,7 +67,7 @@ class Dataset(BaseDataset):
         # read data
         image = cv2.imread(self.images_fps[i])
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        mask_loc, wt = self.self.wt_masks_fps[i]
+        mask_loc, wt = self.wt_masks_fps[i]
 
         mask = np.load(mask_loc)
 
