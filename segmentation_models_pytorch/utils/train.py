@@ -93,10 +93,10 @@ class TrainEpoch(Epoch):
     def batch_update(self, x, y):
         self.optimizer.zero_grad()
         start = time.time()
-        wt, x = x
         prediction = self.model.forward(x)
         end = time.time()
         inf_time = end - start
+        wt, y = y
         loss = self.loss(prediction, y, reduction="none")
         loss = (loss * wt)/torch.sum(wt)
         loss.backward()
@@ -122,9 +122,9 @@ class ValidEpoch(Epoch):
     def batch_update(self, x, y):
         with torch.no_grad():
             start = time.time()
-            _, x = x
             prediction = self.model.forward(x)
             end = time.time()
             inf_time = end - start
+            _, y = y
             loss = self.loss(prediction, y)
         return loss, prediction, inf_time
