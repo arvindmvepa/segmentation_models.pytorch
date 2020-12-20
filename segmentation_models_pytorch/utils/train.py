@@ -98,7 +98,7 @@ class TrainEpoch(Epoch):
         inf_time = end - start
         loss = self.loss(prediction, y)
         #loss = torch.sum(loss * wt)/torch.sum(wt)
-        #loss = torch.mean(loss)
+        loss = torch.mean(loss)
         loss.backward()
         self.optimizer.step()
         return loss, prediction, inf_time
