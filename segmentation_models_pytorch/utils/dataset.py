@@ -24,7 +24,7 @@ class Dataset(BaseDataset):
             self,
             images_dir,
             masks_dir,
-            wt_dir=None,
+            wt_masks_dir=None,
             ids=None,
             augmentation=None,
             preprocessing=None,
@@ -38,20 +38,23 @@ class Dataset(BaseDataset):
         self.ids = [id[:-4] for id in self.ids]
         self.images_fps = [os.path.join(images_dir, image_id) for image_id in self.ids]
         self.masks_fps = [os.path.join(masks_dir, image_id + ".npy") for image_id in self.ids]
-        if not wt_dir:
-            wt_fps = self.masks_fps
+
+        # add weighted elements
+        if not wt_masks_dir:
+            wt_masks_fps = self.masks_fps
             wt = 1
-        elif len(wt_dir) == 2:
-            wt_fps = sorted(os.listdir(wt_dir[0]))
-            wt = wt_dir[1]
+        elif len(wt_masks_dir) == 2:
+            wt_masks_fps = sorted(os.listdir(wt_masks_dir[0]))
+            wt = wt_masks_dir[1]
         else:
             raise ValueError("Wrong arg for wt_dir")
+        self.wt_masks_fps = []
         for i in range(len(self.masks_fps)):
             mask_fps = self.masks_fps[i]
-            if mask_fps in wt_fps:
-                self.masks_fps[i] = (self.masks_fps[i], wt)
+            if mask_fps in wt_masks_fps:
+                self.wt_masks_fps.append((self.masks_fps[i], wt))
             else:
-                self.masks_fps[i] = (self.masks_fps[i], 1)
+                self.wt_masks_fps.append((self.masks_fps[i], 1))
 
         # UPDATED: mask is equivalent 1
         self.class_values = [1]
@@ -64,9 +67,9 @@ class Dataset(BaseDataset):
         # read data
         image = cv2.imread(self.images_fps[i])
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        file_loc, wt = self.masks_fps[i]
+        mask_loc, wt = self.self.wt_masks_fps[i]
 
-        mask = np.load(file_loc)
+        mask = np.load(mask_loc)
 
         # extract certain classes from mask (e.g. cars)
         masks = [(mask == v) for v in self.class_values]
