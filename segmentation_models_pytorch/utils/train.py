@@ -96,7 +96,6 @@ class TrainEpoch(Epoch):
         prediction = self.model.forward(x)
         end = time.time()
         inf_time = end - start
-        print(wt)
         loss = self.loss(prediction, y)
         loss = torch.mean(loss * wt)
         loss.backward()
