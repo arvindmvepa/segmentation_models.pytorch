@@ -44,7 +44,7 @@ class Dataset(BaseDataset):
             wt_masks_fps = self.masks_fps
             wt = 1
         elif len(wt_masks_dir) == 2:
-            wt_masks_fps = sorted(os.listdir(wt_masks_dir[0]))
+            wt_masks_fps = [os.path.join(masks_dir, file) for file in sorted(os.listdir(wt_masks_dir[0]))]
             wt = wt_masks_dir[1]
         else:
             raise ValueError("Wrong arg for wt_dir")
