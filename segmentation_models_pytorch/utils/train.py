@@ -46,7 +46,7 @@ class Epoch:
 
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
             for x, (y, wt) in iterator:
-                x, y = x.to(self.device), y.to(self.device)
+                x, y, wt = x.to(self.device), y.to(self.device), wt.to(self.device)
                 loss, y_pred, inf_time = self.batch_update(x, y, wt)
 
                 # update loss logs
