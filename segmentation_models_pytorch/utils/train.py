@@ -98,8 +98,13 @@ class TrainEpoch(Epoch):
         inf_time = end - start
         loss = self.loss(prediction, y)
         print(wt)
-        loss = torch.mean(torch.sum(loss * wt))
+        print(torch.mean(loss * 1.0))
+        print(torch.mean(torch.sum(loss * wt)))
+        print(torch.mean(loss * wt))
+        print(torch.mean(loss))
+        #loss = torch.mean(torch.sum(loss * wt))
         #loss = torch.mean(loss)
+        loss = torch.mean(loss * wt)
         loss.backward()
         self.optimizer.step()
         return loss, prediction, inf_time
