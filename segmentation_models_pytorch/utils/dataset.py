@@ -24,7 +24,7 @@ class Dataset(BaseDataset):
             self,
             images_dir,
             masks_dir,
-            wt_dir=Done,
+            wt_dir=None,
             ids=None,
             augmentation=None,
             preprocessing=None,
