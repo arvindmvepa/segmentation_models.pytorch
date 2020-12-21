@@ -22,7 +22,7 @@ class TestEpoch(ValidEpoch):
         metrics_meters.update({"inf_time": 0.0} if "inf_time" in self.metrics else {})
 
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
-            for i, (x, y) in enumerate(iterator):
+            for i, (x, (y, wt)) in enumerate(iterator):
                 x, y, wt = x.to(self.device), y.to(self.device), wt.to(self.device)
                 loss, y_pred, inf_time = self.batch_update(x, y, wt)
 
