@@ -23,8 +23,8 @@ class TestEpoch(ValidEpoch):
 
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
             for i, (x, y) in enumerate(iterator):
-                x, y = x.to(self.device), y.to(self.device)
-                loss, y_pred, inf_time = self.batch_update(x, y)
+                x, y, wt = x.to(self.device), y.to(self.device), wt.to(self.device)
+                loss, y_pred, inf_time = self.batch_update(x, y, wt)
 
                 # update loss logs
                 loss_value = loss.cpu().detach().numpy()
