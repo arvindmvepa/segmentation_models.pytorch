@@ -9,18 +9,20 @@ def run_test(model, **params):
     test_net(model, **params)
 
 
-def run_val_exp(model_bname, exp_dir, **params):
+def run_val_exp(model_bnames, exp_dir, **params):
+    if isinstance(model_bnames, str):
+        model_bnames = [model_bnames]
     job_dirs = list(glob(exp_dir))
-    for job_dir in job_dirs:
-        params_file = os.path.join(job_dir, "params.json")
-        with open(params_file) as json_file:
-            job_params = json.load(json_file)
-        job_params.update(params)
-        job_params['model_path'] = os.path.join(job_dir, model_bname)
-        p = multiprocessing.Process(target=val_net, kwargs=job_params)
-        p.start()
-        p.join()
-
+    for model_bname in model_bnames:
+        for job_dir in job_dirs:
+            params_file = os.path.join(job_dir, "params.json")
+            with open(params_file) as json_file:
+                job_params = json.load(json_file)
+            job_params.update(params)
+            job_params['model_path'] = os.path.join(job_dir, model_bname)
+            p = multiprocessing.Process(target=val_net, kwargs=job_params)
+            p.start()
+            p.join()
 
 def run_exp(exp_dir, **search_params):
     if not os.path.exists(exp_dir):
