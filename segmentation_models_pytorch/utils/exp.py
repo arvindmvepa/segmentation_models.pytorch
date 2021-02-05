@@ -77,7 +77,7 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
 def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=1024, width=1024,
             loss=('bce_lts', {}), data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
             val_seg_dir=None, save_dir='/root/output/vessels', save_preds=False, bs=1, val_metrics=(('accuracy', {}), ),
-            out_file='val.json', random_state=42, n_splits=10, fold=0, device='cuda', cuda='0', *args, **kwargs):
+            out_file=None, random_state=42, n_splits=10, fold=0, device='cuda', cuda='0', *args, **kwargs):
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
 
@@ -133,6 +133,8 @@ def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet'
                    for val_metric in valid_logs.keys() if metric in val_metric}
 
     val_metrics.update({"model": model_path})
+    if not out_file:
+        out_file = "val" + os.path.basename(model_path)[:-3] + ".json"
     with open(os.path.join(save_dir, out_file), 'w') as outfile:
         json.dump(val_metrics, outfile)
 
