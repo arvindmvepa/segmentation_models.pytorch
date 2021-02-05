@@ -23,6 +23,26 @@ class AUCROC(base.Metric):
         return self.__name__
 
 
+class AP(base.Metric):
+    __name__ = 'ap'
+
+    def __init__(self, activation=None, ignore_channels=None, **kwargs):
+        super().__init__(**kwargs)
+        self.activation = Activation(activation)
+        self.ignore_channels = ignore_channels
+
+    def forward(self, y_pr, y_gt):
+        y_pr = self.activation(y_pr)
+        return F.ap(
+            y_pr, y_gt,
+            ignore_channels=self.ignore_channels,
+        )
+
+    @property
+    def name(self):
+        return self.__name__
+
+
 class IoU(base.Metric):
     __name__ = 'iou_score'
 
@@ -144,6 +164,7 @@ class Precision(base.Metric):
 
 
 metrics = {'auc_roc': AUCROC,
+           'ap': AP,
            'iou_score': IoU,
            'fscore': Fscore,
            'accuracy': Accuracy,

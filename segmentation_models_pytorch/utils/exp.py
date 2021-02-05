@@ -74,6 +74,69 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
         json.dump(test_metrics, outfile)
 
 
+def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=1024, width=1024,
+            loss=('bce_lts', {}), data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
+            val_seg_dir=None, save_dir='/root/output/vessels', save_preds=False, bs=1, val_metrics=(('accuracy', {}), ),
+            out_file='val.json', n_splits=10, fold=0, device='cuda', cuda='0', *args, **kwargs):
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = cuda
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    if save_preds:
+        save_preds_dir = os.path.join(save_dir, "preds")
+        if not os.path.exists(save_preds_dir):
+            os.makedirs(save_preds_dir)
+    else:
+        save_preds_dir = None
+
+    val_metrics = list(val_metrics)
+
+    if n_splits:
+        kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
+        val_masks = sorted(list(os.listdir(val_seg_dir if val_seg_dir else seg_dir)))
+        split_ids = list(kf.split(val_masks))[fold]
+        val_ids = [val_masks[split_id] for split_id in split_ids[1]]
+    else:
+        val_ids = None
+
+    model = torch.load(model_path)
+    preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
+
+    valid_dataset = Dataset(
+        data_dir,
+        seg_dir,
+        augmentation=get_validation_augmentation(height=height, width=width),
+        preprocessing=get_preprocessing(preprocessing_fn),
+        ids=val_ids,
+    )
+    valid_loader = DataLoader(valid_dataset, batch_size=bs, shuffle=False, num_workers=4)
+
+    loss = losses[loss[0]](**loss[1])
+    for i in range(len(val_metrics)):
+        if val_metrics[i] != 'inf_time':
+            val_metrics[i] = metrics[val_metrics[i][0]](**val_metrics[i][1])
+
+    valid_epoch = smp.utils.train.TestEpoch(
+        model,
+        loss=loss,
+        metrics=val_metrics,
+        device=device,
+        verbose=True,
+        save_preds_dir=save_preds_dir
+    )
+
+    valid_logs = valid_epoch.run(valid_loader)
+
+    val_metrics = {val_metric: valid_logs[val_metric]
+                   for metric in metrics
+                   for val_metric in valid_logs.keys() if metric in val_metric}
+
+    val_metrics.update({"model": model_path})
+    with open(os.path.join(save_dir, out_file), 'w') as outfile:
+        json.dump(val_metrics, outfile)
+
+
 def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
               val_seg_dir=None, wt_masks_dir=None,
               save_dir='/root/exp', decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
