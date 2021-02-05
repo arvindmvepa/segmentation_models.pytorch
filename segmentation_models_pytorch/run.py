@@ -15,6 +15,7 @@ def run_val_exp(model_bnames, exp_dir, **params):
     job_dirs = list(glob(exp_dir))
     for model_bname in model_bnames:
         for job_dir in job_dirs:
+            print(job_dir)
             params_file = os.path.join(job_dir, "params.json")
             with open(params_file) as json_file:
                 job_params = json.load(json_file)
