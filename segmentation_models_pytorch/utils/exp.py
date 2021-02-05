@@ -117,7 +117,7 @@ def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet'
         if val_metrics[i] != 'inf_time':
             val_metrics[i] = metrics[val_metrics[i][0]](**val_metrics[i][1])
 
-    valid_epoch = smp.utils.train.TestEpoch(
+    valid_epoch = smp.utils.test.TestEpoch(
         model,
         loss=loss,
         metrics=val_metrics,
