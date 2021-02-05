@@ -134,7 +134,7 @@ def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet'
 
     val_metrics.update({"model": model_path})
     if not out_file:
-        out_file = "val" + os.path.basename(model_path)[:-3] + ".json"
+        out_file = "val" + os.path.basename(model_path)[:-4] + ".json"
     with open(os.path.join(save_dir, out_file), 'w') as outfile:
         json.dump(val_metrics, outfile)
 
