@@ -17,6 +17,7 @@ def run_val_exp(model_bname, exp_dir, **params):
             job_params = json.load(json_file)
         job_params.update(params)
         job_params['model_path'] = os.path.join(job_dir, model_bname)
+        print(job_params)
         p = multiprocessing.Process(target=val_net, kwargs=job_params)
         p.start()
         p.join()
