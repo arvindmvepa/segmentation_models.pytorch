@@ -169,7 +169,7 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
     masks = sorted(list(os.listdir(seg_dir)))
     if train_sample_prop < 1.0:
         prng = RandomState(train_sample_seed)
-        masks = prng.choice(masks, np.round(len(masks) * train_sample_prop))
+        masks = prng.choice(masks, int(np.round(len(masks) * train_sample_prop)))
 
     if n_splits:
         kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
