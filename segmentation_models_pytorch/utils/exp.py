@@ -166,14 +166,14 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
                               activation=activation)
     preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
 
+    masks = sorted(list(os.listdir(seg_dir)))
     if train_sample_prop < 1.0:
         prng = RandomState(train_sample_seed)
-        seg_dir = prng.choice(seg_dir, np.round(len(seg_dir) * train_sample_prop))
+        masks = prng.choice(masks, np.round(len(masks) * train_sample_prop))
 
     if n_splits:
         kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
-        masks = sorted(list(os.listdir(seg_dir)))
-        val_masks = sorted(list(os.listdir(val_seg_dir if val_seg_dir else seg_dir)))
+        val_masks = sorted(list(os.listdir(val_seg_dir))) if val_seg_dir else masks
         split_ids = list(kf.split(val_masks))[fold]
         val_ids = [val_masks[split_id] for split_id in split_ids[1]]
         train_ids = [mask for mask in masks if mask not in val_ids]
