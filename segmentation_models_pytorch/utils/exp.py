@@ -20,8 +20,8 @@ from .preprocessing import get_pos_wt, get_training_augmentation, get_validation
 
 def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=1024, width=1024,
              loss=('bce_lts', {}), data_dir='/root/data/vessels/test/images', seg_dir='/root/data/vessels/test/gt',
-             save_dir='/root/output/vessels', save_preds=False, bs=1, test_metrics=(('accuracy', {}), ), device='cuda',
-             cuda='0', *args, **kwargs):
+             save_dir='/root/output/vessels', save_preds=False, bs=1, out_file=None, test_metrics=(('accuracy', {}), ),
+             device='cuda', cuda='0', *args, **kwargs):
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
     if not os.path.exists(save_dir):
@@ -71,8 +71,12 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
                     for test_metric in test_logs.keys() if metric in test_metric}
 
     test_metrics.update({"model": model_path})
-    with open(os.path.join(save_dir, 'metrics.json'), 'w') as outfile:
-        json.dump(test_metrics, outfile)
+
+    if not out_file:
+        out_file = "test" + os.path.basename(model_path)[:-4] + ".json"
+
+    with open(os.path.join(save_dir, out_file), 'w') as out:
+        json.dump(test_metrics, out)
 
 
 def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=1024, width=1024,
