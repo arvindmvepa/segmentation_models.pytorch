@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 
 import torch
 import numpy as np
+from numpy.random import RandomState
 import segmentation_models_pytorch as smp
 import json
 import itertools
@@ -140,7 +141,7 @@ def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet'
 
 
 def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
-              val_seg_dir=None, wt_masks_dir=None,
+              val_seg_dir=None, wt_masks_dir=None, train_sample_prop=1.0, train_sample_seed=1,
               save_dir='/root/exp', decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
               activation='sigmoid', height=1024, width=1024, loss=('bce_lts', {}), pos_scale= None,
               optimizer=("adam", {"lr": 1e-4}), lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8,
@@ -164,6 +165,10 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
                               classes=1,
                               activation=activation)
     preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
+
+    if train_sample_prop < 1.0:
+        prng = RandomState(train_sample_seed)
+        seg_dir = prng.choice(seg_dir, np.round(len(seg_dir) * train_sample_prop))
 
     if n_splits:
         kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
