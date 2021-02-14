@@ -49,6 +49,7 @@ def run_exp(exp_dir, **search_params):
     searches = grid_search(**search_params)
 
     for i, search in enumerate(searches):
+        print("starting exp: {}, {}".format(str(i), str(search)))
         save_dir = os.path.join(exp_dir, str(i))
         search["save_dir"] = save_dir
         p = multiprocessing.Process(target=train_net, kwargs=search)

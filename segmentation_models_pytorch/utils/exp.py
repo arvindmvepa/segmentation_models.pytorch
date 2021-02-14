@@ -185,6 +185,8 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
         train_ids = None
         val_ids = None
 
+    print("# of unique train images: {}, # of unique val images: {}".format(len(set(train_ids)), len(set(val_ids))))
+
     train_dataset = Dataset(
         data_dir,
         seg_dir,
