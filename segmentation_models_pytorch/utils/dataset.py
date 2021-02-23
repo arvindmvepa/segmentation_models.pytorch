@@ -43,6 +43,8 @@ class Dataset(BaseDataset):
             self.masks_fps = self.masks_fps + [os.path.join(extra_masks_dir, image_id + ".npy") for image_id in self.ids
                                                if ((image_id + ".npy") in os.listdir(extra_masks_dir)) and
                                                (os.path.join(masks_dir, image_id + ".npy") not in self.masks_fps)]
+
+        print("The number of masks are: {}. The masks are: {}".format(len(self.masks_fps), str(self.masks_fps)))
         # UPDATED: mask is equivalent 1
         self.class_values = [1]
 
