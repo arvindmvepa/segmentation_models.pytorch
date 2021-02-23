@@ -145,7 +145,8 @@ def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet'
 
 
 def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
-              val_seg_dir=None, wt_masks_dir=None, train_sample_prop=1.0, train_sample_seed=1,
+              extra_seg_dir=None, val_seg_dir=None, train_sample_prop=1.0, train_sample_seed=1,
+              extra_train_sample_prop=1.0, extra_train_sample_seed=1,
               save_dir='/root/exp', decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
               activation='sigmoid', height=1024, width=1024, loss=('bce_lts', {}), pos_scale= None,
               optimizer=("adam", {"lr": 1e-4}), lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8,
@@ -171,9 +172,18 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
     preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
 
     masks = sorted(list(os.listdir(seg_dir)))
+    if extra_seg_dir:
+        extra_masks = [mask for mask in sorted(list(os.listdir(extra_seg_dir))) if mask not in masks]
     if train_sample_prop < 1.0:
         prng = RandomState(train_sample_seed)
         masks = prng.choice(masks, size=int(np.round(len(masks) * train_sample_prop)), replace=False)
+    if extra_seg_dir:
+        if extra_train_sample_prop < 1.0:
+            prng = RandomState(extra_train_sample_seed)
+            extra_masks = prng.choice(extra_masks, size=int(np.round(len(extra_masks) * extra_train_sample_prop)),
+                                      replace=False)
+        masks = masks + extra_masks
+
 
     if n_splits:
         kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
@@ -190,17 +200,18 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
     train_dataset = Dataset(
         data_dir,
         seg_dir,
-        wt_masks_dir=wt_masks_dir,
+        extra_seg_dir,
         augmentation=get_training_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
-        ids=train_ids,
+        ids=train_ids
     )
     valid_dataset = Dataset(
         data_dir,
         seg_dir,
+        extra_seg_dir,
         augmentation=get_validation_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
-        ids=val_ids,
+        ids=val_ids
     )
 
     train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, num_workers=12)
