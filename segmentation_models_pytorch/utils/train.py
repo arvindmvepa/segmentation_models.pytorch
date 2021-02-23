@@ -45,9 +45,9 @@ class Epoch:
         metrics_meters.update({"inf_time": []} if "inf_time" in self.metrics else {})
 
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
-            for x, (y, wt) in iterator:
-                x, y, wt = x.to(self.device), y.to(self.device), wt.to(self.device)
-                loss, y_pred, inf_time = self.batch_update(x, y, wt)
+            for x, y in iterator:
+                x, y = x.to(self.device), y.to(self.device)
+                loss, y_pred, inf_time = self.batch_update(x, y)
 
                 # update loss logs
                 loss_value = loss.cpu().detach().numpy()
@@ -90,14 +90,14 @@ class TrainEpoch(Epoch):
     def on_epoch_start(self):
         self.model.train()
 
-    def batch_update(self, x, y, wt):
+    def batch_update(self, x, y):
         self.optimizer.zero_grad()
         start = time.time()
         prediction = self.model.forward(x)
         end = time.time()
         inf_time = end - start
         loss = self.loss(prediction, y)
-        loss = torch.mean(loss * wt)
+        loss = torch.mean(loss)
         loss.backward()
         self.optimizer.step()
         return loss, prediction, inf_time
@@ -118,12 +118,12 @@ class ValidEpoch(Epoch):
     def on_epoch_start(self):
         self.model.eval()
 
-    def batch_update(self, x, y, wt):
+    def batch_update(self, x, y):
         with torch.no_grad():
             start = time.time()
             prediction = self.model.forward(x)
             end = time.time()
             inf_time = end - start
             loss = self.loss(prediction, y)
-            loss = torch.mean(loss * wt)
+            loss = torch.mean(loss)
         return loss, prediction, inf_time

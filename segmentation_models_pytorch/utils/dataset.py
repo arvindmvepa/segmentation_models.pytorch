@@ -54,7 +54,7 @@ class Dataset(BaseDataset):
         # read data
         image = cv2.imread(self.images_fps[i])
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        mask_loc, wt = self.wt_masks_fps[i]
+        mask_loc = self.wt_masks_fps[i]
 
         mask = np.load(mask_loc)
 
@@ -72,7 +72,7 @@ class Dataset(BaseDataset):
             sample = self.preprocessing(image=image, mask=mask)
             image, mask = sample['image'], sample['mask']
 
-        return image, (mask, wt)
+        return image, mask
 
     def __len__(self):
         return len(self.ids)
