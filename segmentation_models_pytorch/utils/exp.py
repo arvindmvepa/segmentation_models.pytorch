@@ -176,12 +176,12 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
         extra_masks = [mask for mask in sorted(list(os.listdir(extra_seg_dir))) if mask not in masks]
     if train_sample_prop < 1.0:
         prng = RandomState(train_sample_seed)
-        masks = prng.choice(masks, size=int(np.round(len(masks) * train_sample_prop)), replace=False)
+        masks = list(prng.choice(masks, size=int(np.round(len(masks) * train_sample_prop)), replace=False))
     if extra_seg_dir:
         if extra_train_sample_prop < 1.0:
             prng = RandomState(extra_train_sample_seed)
-            extra_masks = prng.choice(extra_masks, size=int(np.round(len(extra_masks) * extra_train_sample_prop)),
-                                      replace=False)
+            extra_masks = list(prng.choice(extra_masks, size=int(np.round(len(extra_masks) * extra_train_sample_prop)),
+                                           replace=False))
         masks = masks + extra_masks
 
 
