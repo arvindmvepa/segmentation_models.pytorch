@@ -84,7 +84,7 @@ class Dataset(BaseDataset):
             sample = self.preprocessing(image=image, mask=mask)
             image, mask = sample['image'], sample['mask']
 
-        return image, mask, mask[mask != -1]
+        return image, mask
 
     def __len__(self):
         return len(self.ids)

@@ -90,7 +90,7 @@ class TrainEpoch(Epoch):
     def on_epoch_start(self):
         self.model.train()
 
-    def batch_update(self, x, y, y_FOV):
+    def batch_update(self, x, y):
         self.optimizer.zero_grad()
         start = time.time()
         prediction = self.model.forward(x)
@@ -98,6 +98,8 @@ class TrainEpoch(Epoch):
         inf_time = end - start
 
         prediction_FOV = prediction[y != -1]
+        y_FOV = y[y != -1]
+
         loss = self.loss(prediction_FOV, y_FOV)
         loss = torch.mean(loss)
         loss.backward()
@@ -121,7 +123,7 @@ class ValidEpoch(Epoch):
     def on_epoch_start(self):
         self.model.eval()
 
-    def batch_update(self, x, y, y_FOV):
+    def batch_update(self, x, y):
         with torch.no_grad():
             start = time.time()
             prediction = self.model.forward(x)
@@ -129,6 +131,8 @@ class ValidEpoch(Epoch):
             inf_time = end - start
 
             prediction_FOV = prediction[y != -1]
+            y_FOV = y[y != -1]
+
             loss = self.loss(prediction_FOV, y_FOV)
             loss = torch.mean(loss)
 
