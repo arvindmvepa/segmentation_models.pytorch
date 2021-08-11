@@ -50,6 +50,8 @@ class Epoch:
             for x, y in iterator:
                 x, y = x.to(self.device), y.to(self.device)
                 loss, y_pred, inf_time = self.batch_update(x, y)
+                # update gt with FOV
+                y = y[y != -1]
 
                 # update loss logs
                 loss_value = loss.cpu().detach().numpy()
