@@ -2,18 +2,20 @@ import albumentations as albu
 import numpy as np
 
 
-def get_neg_pos_ratio(masks_fps):
-    masks_flat = np.concatenate([np.load(mask_fp)
-                                 for mask_fp in masks_fps]).flatten()
+def get_neg_pos_ratio(masks_fps, omasks_fps):
+    masks_flat = np.concatenate([print(mask_fp)
+                                 for mask_fp, omask_fp in zip(masks_fps, omasks_fps)]).flatten()
+    masks_flat = np.concatenate([np.load(mask_fp)[np.load(omask_fp)]
+                                 for mask_fp, omask_fp in zip(masks_fps, omasks_fps)]).flatten()
     num_pos = float(np.sum(masks_flat))
     total = float(len(masks_flat))
     num_neg = total - num_pos
     return num_neg/num_pos
 
 
-def get_pos_wt(masks_fps, c=1.0):
+def get_pos_wt(masks_fps, omasks_fps, c=1.0):
     if c:
-        neg_pos_ratio = get_neg_pos_ratio(masks_fps)
+        neg_pos_ratio = get_neg_pos_ratio(masks_fps, omasks_fps)
         return c * neg_pos_ratio
     else:
         return 1.0
