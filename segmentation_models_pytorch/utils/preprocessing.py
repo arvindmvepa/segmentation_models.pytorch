@@ -4,7 +4,7 @@ import numpy as np
 
 def get_neg_pos_ratio(masks_fps, omasks_fps):
     mask_arrs = [np.load(mask_fp) for mask_fp in sorted(masks_fps)]
-    omask_arrs = [np.load(omask_fp) for omask_fp in sorted(omasks_fps)]
+    omask_arrs = [np.load(omask_fp).astype(bool) for omask_fp in sorted(omasks_fps)]
 
     print('hello')
     [print(np.sum(arr)) for arr in mask_arrs]
