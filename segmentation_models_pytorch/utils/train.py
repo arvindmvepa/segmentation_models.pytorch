@@ -104,6 +104,9 @@ class TrainEpoch(Epoch):
         prediction_FOV = prediction[y != -1]
         y_FOV = y[y != -1]
 
+        print('train')
+        print(torch.sum(y_FOV))
+
         loss = self.loss(prediction_FOV, y_FOV)
         loss = torch.mean(loss)
         loss.backward()
@@ -139,6 +142,9 @@ class ValidEpoch(Epoch):
             prediction = resize(prediction)
             prediction_FOV = prediction[y != -1]
             y_FOV = y[y != -1]
+
+            print('val')
+            print(torch.sum(y_FOV))
 
             loss = self.loss(prediction_FOV, y_FOV)
             loss = torch.mean(loss)
