@@ -99,6 +99,7 @@ class TrainEpoch(Epoch):
         inf_time = end - start
 
         # resize prediction to gt size
+        prediction = prediction.cpu().detach().numpy()
         prediction = cv2.resize(prediction, (565, 584))
         prediction_FOV = prediction[y != -1]
         y_FOV = y[y != -1]
@@ -134,6 +135,7 @@ class ValidEpoch(Epoch):
             inf_time = end - start
 
             # resize prediction to gt size
+            prediction = prediction.cpu().detach().numpy()
             prediction = cv2.resize(prediction, (565, 584))
             prediction_FOV = prediction[y != -1]
             y_FOV = y[y != -1]
