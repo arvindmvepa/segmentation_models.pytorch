@@ -41,7 +41,7 @@ class Dataset(BaseDataset):
         print(os.listdir(masks_dir))
         self.images_fps = [os.path.join(images_dir, image_id + "_training.tif") for image_id in self.ids]
         self.masks_fps = [os.path.join(masks_dir, image_id + "_manual1.gif.npy") for image_id in self.ids
-                          if (image_id + "_training_mask.gif.npy") in os.listdir(masks_dir)]
+                          if (image_id + "_manual1.gif.npy") in os.listdir(masks_dir)]
         self.omasks_fps = [os.path.join(omask_dir, image_id + "_training_mask.gif.npy") for image_id in self.ids
                            if (image_id + "_training_mask.gif.npy") in os.listdir(omask_dir)]
         """
