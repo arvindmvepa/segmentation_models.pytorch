@@ -29,6 +29,7 @@ class Dataset(BaseDataset):
             ids=None,
             augmentation=None,
             preprocessing=None,
+            val=False
     ):
         if not ids:
             # Using numpy arrays
@@ -54,6 +55,7 @@ class Dataset(BaseDataset):
 
         self.augmentation = augmentation
         self.preprocessing = preprocessing
+        self.val = val
 
     def __getitem__(self, i):
 
@@ -76,8 +78,12 @@ class Dataset(BaseDataset):
 
         # apply augmentations
         if self.augmentation:
-            sample = self.augmentation(image=image, mask=mask)
-            image, mask = sample['image'], sample['mask']
+            if not self.val:
+                sample = self.augmentation(image=image, mask=mask)
+                image, mask = sample['image'], sample['mask']
+            else:
+                sample = self.augmentation(image=image)
+                image = sample['image']
 
         # apply preprocessing
         if self.preprocessing:

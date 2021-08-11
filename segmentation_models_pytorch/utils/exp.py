@@ -48,6 +48,7 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
         omask_dir,
         augmentation=get_validation_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
+        val=True
     )
 
     test_dataloader = DataLoader(test_dataset, batch_size=bs, shuffle=False, num_workers=4)
@@ -122,6 +123,7 @@ def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet'
         augmentation=get_validation_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
         ids=val_ids,
+        val=True
     )
     valid_loader = DataLoader(valid_dataset, batch_size=bs, shuffle=False, num_workers=4)
 
@@ -224,7 +226,8 @@ def train_net(data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/images',
         extra_seg_dir,
         augmentation=get_validation_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
-        ids=val_ids
+        ids=val_ids,
+        val=True
     )
 
     train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, num_workers=12)
