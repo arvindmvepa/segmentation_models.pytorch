@@ -78,12 +78,16 @@ class Dataset(BaseDataset):
 
         # apply augmentations
         if self.augmentation:
+            """
             if not self.val:
                 sample = self.augmentation(image=image, mask=mask)
                 image, mask = sample['image'], sample['mask']
             else:
                 sample = self.augmentation(image=image)
                 image = sample['image']
+            """
+            sample = self.augmentation(image=image, mask=mask)
+            image, mask = sample['image'], sample['mask']
 
         # apply preprocessing
         if self.preprocessing:
