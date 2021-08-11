@@ -4,6 +4,7 @@ from tqdm import tqdm as tqdm
 import numpy as np
 from .meter import AverageValueMeter
 import time
+import cv2
 
 class Epoch:
 
@@ -97,6 +98,8 @@ class TrainEpoch(Epoch):
         end = time.time()
         inf_time = end - start
 
+        # resize prediction to gt size
+        prediction = cv2.resize(prediction, (565, 584))
         prediction_FOV = prediction[y != -1]
         y_FOV = y[y != -1]
 
@@ -130,6 +133,8 @@ class ValidEpoch(Epoch):
             end = time.time()
             inf_time = end - start
 
+            # resize prediction to gt size
+            prediction = cv2.resize(prediction, (565, 584))
             prediction_FOV = prediction[y != -1]
             y_FOV = y[y != -1]
 
