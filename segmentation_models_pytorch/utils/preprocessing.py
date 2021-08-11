@@ -9,10 +9,11 @@ def get_neg_pos_ratio(masks_fps, omasks_fps):
     print('hello')
     FOV_arrs = [mask_arr[omask_arr] for mask_arr, omask_arr in zip(mask_arrs, omask_arrs)]
     print('hello1')
-    masks_flat = np.concatenate(FOV_arrs, axis=None).flatten()
-    print('bye')
-    num_pos = float(np.sum(masks_flat))
-    total = float(len(masks_flat))
+    num_pos = np.sum([np.sum(arr) for arr in FOV_arrs])
+    print('hello2')
+    total = np.sum([len(arr) for arr in FOV_arrs])
+    print('hello3')
+
     num_neg = total - num_pos
     return num_neg/num_pos
 
