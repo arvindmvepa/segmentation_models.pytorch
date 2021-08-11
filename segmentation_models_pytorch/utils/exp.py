@@ -18,7 +18,7 @@ from segmentation_models_pytorch import decoders
 from .preprocessing import get_pos_wt, get_training_augmentation, get_validation_augmentation, get_preprocessing
 
 
-def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=1024, width=1024,
+def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=576, width=608,
              loss=('bce_lts', {}), data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/test/images',
              seg_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/test/targets_npy',
              omask_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/test/masks_npy',
@@ -83,7 +83,7 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
         json.dump(test_metrics, out)
 
 
-def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=1024, width=1024,
+def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=576, width=608,
             loss=('bce_lts', {}), data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/images',
             seg_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/targets_npy',
             omask_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/masks_npy',
@@ -159,7 +159,7 @@ def train_net(data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/images',
               extra_train_sample_prop=1.0, extra_train_sample_seed=1,
               save_dir='/home/ubuntu/work/drive_exp',
               decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
-              activation='sigmoid', height=1024, width=1024, loss=('bce_lts', {}), pos_scale= None,
+              activation='sigmoid', height=576, width=608, loss=('bce_lts', {}), pos_scale= None,
               optimizer=("adam", {"lr": 1e-4}), lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8,
               train_metrics=(('accuracy', {}), ), val_metrics=(('accuracy', {}), ),
               best_metrics=(('accuracy_0.5', 0.0, [], True), ), best_thresh_metrics=(('accuracy', 0.0, True), ),

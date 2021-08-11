@@ -19,7 +19,7 @@ def get_pos_wt(masks_fps, omasks_fps, c=1.0):
         return 1.0
 
 
-def get_training_augmentation(height=1024, width=1024):
+def get_training_augmentation(height=576, width=608):
     train_transform = [
 
         albu.HorizontalFlip(p=0.5),
@@ -62,7 +62,7 @@ def get_training_augmentation(height=1024, width=1024):
     return albu.Compose(train_transform)
 
 
-def get_validation_augmentation(height=1024, width=1024):
+def get_validation_augmentation(height=576, width=608):
     """Add paddings to make image shape divisible by 32"""
     test_transform = [
         # albu.PadIfNeeded(384, 480)
