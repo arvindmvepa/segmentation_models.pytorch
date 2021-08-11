@@ -19,8 +19,11 @@ from .preprocessing import get_pos_wt, get_training_augmentation, get_validation
 
 
 def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=1024, width=1024,
-             loss=('bce_lts', {}), data_dir='/root/data/vessels/test/images', seg_dir='/root/data/vessels/test/gt',
-             save_dir='/root/output/vessels', save_preds=False, bs=1, out_file=None, test_metrics=(('accuracy', {}), ),
+             loss=('bce_lts', {}), data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/test/images',
+             seg_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/test/targets_npy',
+             omask_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/test/masks_npy',
+             save_dir='/home/ubuntu/work/drive_exp', save_preds=False, bs=1, out_file=None,
+             test_metrics=(('accuracy', {}), ),
              device='cuda', cuda='0', *args, **kwargs):
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
@@ -42,6 +45,7 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
     test_dataset = Dataset(
         data_dir,
         seg_dir,
+        omask_dir,
         augmentation=get_validation_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
     )
@@ -80,8 +84,11 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
 
 
 def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=1024, width=1024,
-            loss=('bce_lts', {}), data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
-            val_seg_dir=None, save_dir='/root/output/vessels', save_preds=False, bs=1, val_metrics=(('accuracy', {}), ),
+            loss=('bce_lts', {}), data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/images',
+            seg_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/targets_npy',
+            omask_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/masks_npy',
+            val_seg_dir=None, save_dir='/home/ubuntu/work/drive_exp', save_preds=False, bs=1,
+            val_metrics=(('accuracy', {}), ),
             out_file=None, random_state=42, n_splits=10, fold=0, device='cuda', cuda='0', *args, **kwargs):
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
@@ -111,6 +118,7 @@ def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet'
     valid_dataset = Dataset(
         data_dir,
         seg_dir,
+        omask_dir,
         augmentation=get_validation_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
         ids=val_ids,
@@ -144,10 +152,13 @@ def val_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet'
         json.dump(val_metrics, outfile)
 
 
-def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/vessels/train/gt',
+def train_net(data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/images',
+              seg_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/targets_npy',
+              omask_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/masks_npy',
               extra_seg_dir=None, val_seg_dir=None, train_sample_prop=1.0, train_sample_seed=1,
               extra_train_sample_prop=1.0, extra_train_sample_seed=1,
-              save_dir='/root/exp', decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
+              save_dir='/home/ubuntu/work/drive_exp',
+              decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
               activation='sigmoid', height=1024, width=1024, loss=('bce_lts', {}), pos_scale= None,
               optimizer=("adam", {"lr": 1e-4}), lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8,
               train_metrics=(('accuracy', {}), ), val_metrics=(('accuracy', {}), ),
@@ -200,6 +211,7 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
     train_dataset = Dataset(
         data_dir,
         seg_dir,
+        omask_dir,
         extra_seg_dir,
         augmentation=get_training_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
@@ -208,6 +220,7 @@ def train_net(data_dir='/root/data/vessels/train/images', seg_dir='/root/data/ve
     valid_dataset = Dataset(
         data_dir,
         seg_dir,
+        omask_dir,
         extra_seg_dir,
         augmentation=get_validation_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),

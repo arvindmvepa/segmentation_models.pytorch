@@ -22,9 +22,12 @@ class TestEpoch(ValidEpoch):
         metrics_meters.update({"inf_time": 0.0} if "inf_time" in self.metrics else {})
 
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
-            for i, (x, y) in enumerate(iterator):
-                x, y = x.to(self.device), y.to(self.device)
-                loss, y_pred, inf_time = self.batch_update(x, y)
+            for i, (x, y, y_FOV) in enumerate(iterator):
+                # need to remove values outside FOV inside prediction/gt (flaten?)
+                x, y, y_FOV = x.to(self.device), y.to(self.device), y_FOV.to(self.device)
+                loss, y_pred, inf_time = self.batch_update(x, y, y_FOV)
+                # update gt with FOV
+                y = y_FOV
 
                 # update loss logs
                 loss_value = loss.cpu().detach().numpy()
