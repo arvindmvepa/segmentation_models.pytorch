@@ -135,8 +135,8 @@ class ValidEpoch(Epoch):
             inf_time = end - start
 
             # resize prediction to gt size
-            resize = Resize((584, 565))
-            prediction = resize(prediction)
+            # resize = Resize((584, 565))
+            # prediction = resize(prediction)
             prediction_FOV = prediction[y != -1]
             y_FOV = y[y != -1]
 
