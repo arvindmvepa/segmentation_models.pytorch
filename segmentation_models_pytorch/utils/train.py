@@ -102,7 +102,7 @@ class TrainEpoch(Epoch):
         print(prediction.shape)
         prediction = prediction.cpu().detach().numpy()
         print(prediction.shape)
-        prediction = cv2.resize(prediction, (565, 584))
+        prediction = np.concatenate([cv2.resize(pred[0,:,:],(565, 584))[np.newaxis,:,:] for pred in prediction])
         prediction_FOV = prediction[y != -1]
         y_FOV = y[y != -1]
 
@@ -138,7 +138,7 @@ class ValidEpoch(Epoch):
 
             # resize prediction to gt size
             prediction = prediction.cpu().detach().numpy()
-            prediction = cv2.resize(prediction, (565, 584))
+            prediction = np.concatenate([cv2.resize(pred[0, :, :], (565, 584))[np.newaxis, :, :] for pred in prediction])
             prediction_FOV = prediction[y != -1]
             y_FOV = y[y != -1]
 
