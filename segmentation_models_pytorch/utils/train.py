@@ -5,6 +5,7 @@ import numpy as np
 from .meter import AverageValueMeter
 import time
 import cv2
+from torchvision.transforms import Resize
 
 class Epoch:
 
@@ -99,10 +100,8 @@ class TrainEpoch(Epoch):
         inf_time = end - start
 
         # resize prediction to gt size
-        print(prediction.shape)
-        prediction = prediction.cpu().detach().numpy()
-        print(prediction.shape)
-        prediction = np.concatenate([cv2.resize(pred[0,:,:],(565, 584))[np.newaxis,:,:] for pred in prediction])
+        resize = Resize((565, 584))
+        prediction = resize(prediction)
         prediction_FOV = prediction[y != -1]
         y_FOV = y[y != -1]
 
@@ -137,8 +136,8 @@ class ValidEpoch(Epoch):
             inf_time = end - start
 
             # resize prediction to gt size
-            prediction = prediction.cpu().detach().numpy()
-            prediction = np.concatenate([cv2.resize(pred[0, :, :], (565, 584))[np.newaxis, :, :] for pred in prediction])
+            resize = Resize((565, 584))
+            prediction = resize(prediction)
             prediction_FOV = prediction[y != -1]
             y_FOV = y[y != -1]
 
