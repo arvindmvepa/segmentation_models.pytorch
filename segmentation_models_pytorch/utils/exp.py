@@ -251,9 +251,10 @@ def train_net(data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/images',
     optimizer = optimizers[optimizer[0]](params=model.parameters(), **optimizer[1])
     if reduce_lr_on_plateau is not None:
         print('initialize ReduceLROnPlateau')
-        lr_scheduler = ReduceLROnPlateau(optimizer, mode=reduce_lr_on_plateau.get('mode', 'min'),
+        lr_scheduler = ReduceLROnPlateau(optimizer, mode=reduce_lr_on_plateau.get('mode', 'max'),
                                          factor=reduce_lr_on_plateau.get('factor', .1),
-                                         patience=reduce_lr_on_plateau.get('patience', 5))
+                                         patience=reduce_lr_on_plateau.get('patience', 5),
+                                         verbose=reduce_lr_on_plateau.get('verbose', True))
 
     train_epoch = smp.utils.train.TrainEpoch(
         model,
@@ -299,10 +300,9 @@ def train_net(data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/images',
 
         if reduce_lr_on_plateau is not None:
             if cur_epoch % val_freq == 0:
-                print('debug ReduceLROnPlateau')
                 val_metrics = {valid_metric: valid_logs[valid_metric]
                                for valid_metric in valid_logs.keys() if metric in valid_metric}
-                lr_scheduler.step(val_metrics[reduce_lr_on_plateau.get("metric", 'auroc')], epoch=epoch)
+                lr_scheduler.step(val_metrics[reduce_lr_on_plateau.get("metric", 'auc_roc')], epoch=epoch)
         else:
             for lr, epoch in lr_schedule:
                 if i == epoch:
