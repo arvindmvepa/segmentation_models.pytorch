@@ -299,9 +299,9 @@ def train_net(data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/images',
 
         if reduce_lr_on_plateau is not None:
             print('debug ReduceLROnPlateau')
-            metrics = {valid_metric: valid_logs[valid_metric]
-                       for valid_metric in valid_logs.keys() if metric in valid_metric}
-            lr_scheduler.step(metrics[reduce_lr_on_plateau.get("metric", 'auroc')], epoch=epoch)
+            val_metrics = {valid_metric: valid_logs[valid_metric]
+                           for valid_metric in valid_logs.keys() if metric in valid_metric}
+            lr_scheduler.step(val_metrics[reduce_lr_on_plateau.get("metric", 'auroc')], epoch=epoch)
         else:
             for lr, epoch in lr_schedule:
                 if i == epoch:
