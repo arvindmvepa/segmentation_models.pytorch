@@ -300,8 +300,7 @@ def train_net(data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/images',
 
         if reduce_lr_on_plateau is not None:
             if cur_epoch % val_freq == 0:
-                print(valid_logs.keys())
-                lr_scheduler.step(valid_logs[reduce_lr_on_plateau.get("metric", 'auc_roc')], epoch=epoch)
+                lr_scheduler.step(valid_logs[reduce_lr_on_plateau.get("metric", 'auc_roc')], epoch=cur_epoch)
         else:
             for lr, epoch in lr_schedule:
                 if i == epoch:
