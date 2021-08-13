@@ -16,6 +16,7 @@ from .metrics import metrics
 from .optimizers import optimizers
 from segmentation_models_pytorch import decoders
 from .preprocessing import get_pos_wt, get_training_augmentation, get_validation_augmentation, get_preprocessing
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=608, width=576,
@@ -162,7 +163,7 @@ def train_net(data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/images',
               save_dir='/home/ubuntu/work/drive_exp',
               decoder="unet", encoder='se_resnext50_32x4d', encoder_weights='imagenet',
               activation='sigmoid', height=608, width=576, loss=('bce_lts', {}), pos_scale= None,
-              optimizer=("adam", {"lr": 1e-4}), lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8,
+              optimizer=("adam", {"lr": 1e-4}), reduce_lr_on_plateau=None, lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8,
               train_metrics=(('accuracy', {}), ), val_metrics=(('accuracy', {}), ),
               best_metrics=(('accuracy_0.5', 0.0, [], True), ), best_thresh_metrics=(('accuracy', 0.0, True), ),
               last_metrics=('accuracy',), n_splits=10, fold=0, val_freq=5, checkpoint_freq=50, num_epochs=200,
@@ -248,6 +249,11 @@ def train_net(data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/images',
             val_metrics[i] = metrics[val_metrics[i][0]](**val_metrics[i][1])
 
     optimizer = optimizers[optimizer[0]](params=model.parameters(), **optimizer[1])
+    if reduce_lr_on_plateau is not None:
+        print('initialize ReduceLROnPlateau')
+        lr_scheduler = ReduceLROnPlateau(optimizer, mode=reduce_lr_on_plateau.get('mode', 'min'),
+                                         factor=reduce_lr_on_plateau.get('factor', .1),
+                                         patience=reduce_lr_on_plateau.get('patience', 5))
 
     train_epoch = smp.utils.train.TrainEpoch(
         model,
@@ -291,11 +297,17 @@ def train_net(data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/train/images',
                                                  save_net=save_net)
                 best_thresh_metrics[i] = metric, max_score, gt
 
-        for lr, epoch in lr_schedule:
-            if i == epoch:
-                for param_group in optimizer.param_groups:
-                    param_group['lr'] = lr
-                print('Changed Decoder learning rate to {}!'.format(str(lr)))
+        if reduce_lr_on_plateau is not None:
+            print('debug ReduceLROnPlateau')
+            metrics = {valid_metric: valid_logs[valid_metric]
+                       for valid_metric in valid_logs.keys() if metric in valid_metric}
+            lr_scheduler.step(metrics[reduce_lr_on_plateau.get("metric", 'auroc')], epoch=epoch)
+        else:
+            for lr, epoch in lr_schedule:
+                if i == epoch:
+                    for param_group in optimizer.param_groups:
+                        param_group['lr'] = lr
+                    print('Changed Decoder learning rate to {}!'.format(str(lr)))
 
 
 def save_best_checkpoint(model, metric, prev_max_score, valid_logs, cur_epoch, cur_fold, save_dir, other_metrics=None,
