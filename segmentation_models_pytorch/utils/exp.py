@@ -74,10 +74,10 @@ def ensemble_test_net(model_pred_dirs, encoder='se_resnext50_32x4d', encoder_wei
                     for metric in metrics
                     for test_metric in test_logs.keys() if metric in test_metric}
 
-    test_metrics.update({"model": model_path})
+    test_metrics.update({"model_pred_dirs": model_pred_dirs})
 
     if not out_file:
-        out_file = "test" + os.path.basename(model_path)[:-4] + ".json"
+        out_file = "test_ensemble.json"
 
     with open(os.path.join(save_dir, out_file), 'w') as out:
         json.dump(test_metrics, out)
