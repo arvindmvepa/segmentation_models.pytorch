@@ -63,7 +63,7 @@ class TestEpoch(ValidEpoch):
 class TestEnsembleEpoch(TestEpoch):
 
     def _to_device(self):
-        raise NotImplementedError()
+        pass
 
     def on_epoch_start(self):
         pass
