@@ -73,7 +73,7 @@ class TestEnsembleEpoch(TestEpoch):
         # resize = Resize((584, 565))
         # prediction = resize(prediction)
 
-        prediction = x
+        prediction = torch.squeeze(x, dim=0)
 
         loss = self.loss(prediction, y)
         loss = torch.mean(loss)
