@@ -60,6 +60,7 @@ def ensemble_test_net(model_pred_dirs, encoder='se_resnext50_32x4d', encoder_wei
 
     # evaluate model on test set
     test_epoch = smp.utils.test.TestEnsembleEpoch(
+        model=None,
         loss=loss,
         metrics=test_metrics,
         device=device,
