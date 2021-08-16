@@ -96,7 +96,7 @@ class Dataset(BaseDataset):
         if self.model_pred_dirs:
             pred_file = self.pred_files[i]
             all_model_preds = [np.load(os.path.join(model_dir, "preds", pred_file)) for model_dir in self.model_pred_dirs]
-            return np.mean(all_model_preds), mask
+            return np.mean(all_model_preds, axis=[1,2]), mask
 
         return image, mask
 
