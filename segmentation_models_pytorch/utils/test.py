@@ -4,6 +4,7 @@ import numpy as np
 import os
 from .meter import AverageValueMeter
 from .train import ValidEpoch, Epoch
+import torch
 
 
 class TestEpoch(ValidEpoch):
@@ -69,14 +70,11 @@ class TestEnsembleEpoch(TestEpoch):
         pass
 
     def batch_update(self, x, y):
-        prediction = x
 
         # resize prediction to gt size
         # resize = Resize((584, 565))
         # prediction = resize(prediction)
-        print(prediction.shape)
-        print(y.shape)
-        prediction_FOV = prediction[y != -1]
+        prediction_FOV = x
         y_FOV = y[y != -1]
 
         loss = self.loss(prediction_FOV, y_FOV)
