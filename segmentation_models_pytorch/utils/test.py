@@ -69,10 +69,7 @@ class TestEnsembleEpoch(TestEpoch):
         pass
 
     def batch_update(self, x, y):
-        start = time.time()
         prediction = x
-        end = time.time()
-        inf_time = end - start
 
         # resize prediction to gt size
         # resize = Resize((584, 565))
@@ -83,5 +80,5 @@ class TestEnsembleEpoch(TestEpoch):
         loss = self.loss(prediction_FOV, y_FOV)
         loss = torch.mean(loss)
 
-        return loss, prediction_FOV, inf_time
+        return loss, prediction_FOV, 0
 
