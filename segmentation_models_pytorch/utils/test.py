@@ -74,7 +74,8 @@ class TestEnsembleEpoch(TestEpoch):
         # resize prediction to gt size
         # resize = Resize((584, 565))
         # prediction = resize(prediction)
-        prediction_FOV = x
+
+        prediction_FOV = torch.squeeze(x)
         y_FOV = y[y != -1]
 
         loss = self.loss(prediction_FOV, y_FOV)
