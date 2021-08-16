@@ -29,20 +29,21 @@ class Dataset(BaseDataset):
             ids=None,
             augmentation=None,
             preprocessing=None,
-            val=False
+            val=False,
+            test=False
     ):
         if not ids:
             # Using numpy arrays
             self.ids = sorted(os.listdir(masks_dir))
         else:
             self.ids = ids
-
         self.ids = [id[:2] for id in self.ids]
-        self.images_fps = [os.path.join(images_dir, image_id + "_training.tif") for image_id in self.ids]
+        self.images_fps = [os.path.join(images_dir, image_id + "_test.tif") for image_id in self.ids] \
+            if test else [os.path.join(images_dir, image_id + "_training.tif") for image_id in self.ids]
         self.masks_fps = [os.path.join(masks_dir, image_id + "_manual1.gif.npy") for image_id in self.ids
                           if (image_id + "_manual1.gif.npy") in os.listdir(masks_dir)]
-        self.omasks_fps = [os.path.join(omask_dir, image_id + "_training_mask.gif.npy") for image_id in self.ids
-                           if (image_id + "_training_mask.gif.npy") in os.listdir(omask_dir)]
+        self.omasks_fps = [os.path.join(omask_dir, image_id + "_test_mask.gif.npy") for image_id in self.ids if (image_id + "_training_mask.gif.npy") in os.listdir(omask_dir)] \
+            if test else [os.path.join(omask_dir, image_id + "_training_mask.gif.npy") for image_id in self.ids if (image_id + "_training_mask.gif.npy") in os.listdir(omask_dir)]
         """
         if extra_masks_dir:
             self.masks_fps = self.masks_fps + [os.path.join(extra_masks_dir, image_id + ".npy") for image_id in self.ids

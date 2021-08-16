@@ -49,7 +49,8 @@ def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet
         omask_dir,
         augmentation=get_validation_augmentation(height=height, width=width),
         preprocessing=get_preprocessing(preprocessing_fn),
-        val=True
+        val=True,
+        test=True
     )
 
     test_dataloader = DataLoader(test_dataset, batch_size=bs, shuffle=False, num_workers=4)
