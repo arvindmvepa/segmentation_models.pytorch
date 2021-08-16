@@ -50,7 +50,7 @@ def ensemble_test_net(model_pred_dirs, encoder='se_resnext50_32x4d', encoder_wei
         test=True
     )
 
-    test_dataloader = DataLoader(test_dataset, batch_size=bs, shuffle=False, num_workers=4)
+    test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=4)
 
     for i in range(len(test_metrics)):
         if test_metrics[i] != 'inf_time':
