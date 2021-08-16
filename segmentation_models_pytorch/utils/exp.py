@@ -19,6 +19,69 @@ from .preprocessing import get_pos_wt, get_training_augmentation, get_validation
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
+def ensemble_test_net(model_pred_dirs, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=608, width=576,
+                      loss=('bce_lts', {}), data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/test/images',
+                      seg_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/test/targets_npy',
+                      omask_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/test/masks_npy',
+                      save_dir='/home/ubuntu/work/drive_exp', save_preds=False, out_file=None,
+                      test_metrics=(('accuracy', {}), ), device='cuda', cuda='0', *args, **kwargs):
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = cuda
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    if save_preds:
+        save_preds_dir = os.path.join(save_dir, "preds")
+        if not os.path.exists(save_preds_dir):
+            os.makedirs(save_preds_dir)
+    else:
+        save_preds_dir = None
+
+    preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
+
+    # create test dataset
+    test_dataset = Dataset(
+        data_dir,
+        seg_dir,
+        omask_dir,
+        model_pred_dirs=model_pred_dirs,
+        augmentation=get_validation_augmentation(height=height, width=width),
+        preprocessing=get_preprocessing(preprocessing_fn),
+        val=True,
+        test=True
+    )
+
+    test_dataloader = DataLoader(test_dataset, batch_size=bs, shuffle=False, num_workers=4)
+
+    for i in range(len(test_metrics)):
+        if test_metrics[i] != 'inf_time':
+            test_metrics[i] = metrics[test_metrics[i][0]](**test_metrics[i][1])
+
+    loss = losses[loss[0]](**loss[1])
+
+    # evaluate model on test set
+    test_epoch = smp.utils.test.TestEnsembleEpoch(
+        loss=loss,
+        metrics=test_metrics,
+        device=device,
+        verbose=True,
+        save_preds_dir=save_preds_dir
+    )
+
+    test_logs = test_epoch.run(test_dataloader)
+
+    test_metrics = {test_metric: test_logs[test_metric]
+                    for metric in metrics
+                    for test_metric in test_logs.keys() if metric in test_metric}
+
+    test_metrics.update({"model": model_path})
+
+    if not out_file:
+        out_file = "test" + os.path.basename(model_path)[:-4] + ".json"
+
+    with open(os.path.join(save_dir, out_file), 'w') as out:
+        json.dump(test_metrics, out)
+
+
 def test_net(model_path, encoder='se_resnext50_32x4d', encoder_weights='imagenet', height=608, width=576,
              loss=('bce_lts', {}), data_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/test/images',
              seg_dir='/home/ubuntu/work/vessel_seg/data/DRIVE/test/targets_npy',

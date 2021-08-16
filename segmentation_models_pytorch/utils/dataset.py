@@ -27,10 +27,11 @@ class Dataset(BaseDataset):
             omask_dir,
             extra_masks_dir=None,
             ids=None,
+            model_pred_dirs=None,
             augmentation=None,
             preprocessing=None,
             val=False,
-            test=False
+            test=False,
     ):
         if not ids:
             # Using numpy arrays
@@ -44,12 +45,9 @@ class Dataset(BaseDataset):
                           if (image_id + "_manual1.gif.npy") in os.listdir(masks_dir)]
         self.omasks_fps = [os.path.join(omask_dir, image_id + "_test_mask.gif.npy") for image_id in self.ids if (image_id + "_test_mask.gif.npy") in os.listdir(omask_dir)] \
             if test else [os.path.join(omask_dir, image_id + "_training_mask.gif.npy") for image_id in self.ids if (image_id + "_training_mask.gif.npy") in os.listdir(omask_dir)]
-        """
-        if extra_masks_dir:
-            self.masks_fps = self.masks_fps + [os.path.join(extra_masks_dir, image_id + ".npy") for image_id in self.ids
-                                               if ((image_id + ".npy") in os.listdir(extra_masks_dir)) and
-                                               (os.path.join(masks_dir, image_id + ".npy") not in self.masks_fps)]
-        """
+        self.model_pred_dirs = model_pred_dirs
+        if self.model_pred_dirs:
+            self.pred_files = [id + ".npy" for id in self.ids]
         print("The number of masks are: {}. The masks are: {}".format(len(self.masks_fps), str(self.masks_fps)))
         # UPDATED: mask is equivalent 1
         self.class_values = [1]
@@ -94,6 +92,11 @@ class Dataset(BaseDataset):
         if self.preprocessing:
             sample = self.preprocessing(image=image, mask=mask)
             image, mask = sample['image'], sample['mask']
+
+        if self.model_pred_dirs:
+            pred_file = np.load(self.pred_files[i])
+            all_model_preds = [np.load(os.path.join(model_dir, "preds", pred_file)) for model_dir in self.model_pred_dirs]
+            return np.mean(all_model_preds), mask
 
         return image, mask
 
