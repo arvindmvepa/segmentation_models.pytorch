@@ -50,8 +50,6 @@ class Epoch:
             for x, y in iterator:
                 x, y = x.to(self.device), y.to(self.device)
                 loss, y_pred, inf_time = self.batch_update(x, y)
-                # update gt with FOV
-                y = y[y != -1]
 
                 # update loss logs
                 loss_value = loss.cpu().detach().numpy()
@@ -101,15 +99,12 @@ class TrainEpoch(Epoch):
         end = time.time()
         inf_time = end - start
 
-        prediction_FOV = prediction[y != -1]
-        y_FOV = y[y != -1]
-
-        loss = self.loss(prediction_FOV, y_FOV)
+        loss = self.loss(prediction, y)
         loss = torch.mean(loss)
         loss.backward()
         self.optimizer.step()
 
-        return loss, prediction_FOV, inf_time
+        return loss, prediction, inf_time
 
 
 class ValidEpoch(Epoch):
@@ -137,10 +132,8 @@ class ValidEpoch(Epoch):
             # resize prediction to gt size
             # resize = Resize((584, 565))
             # prediction = resize(prediction)
-            prediction_FOV = prediction[y != -1]
-            y_FOV = y[y != -1]
 
-            loss = self.loss(prediction_FOV, y_FOV)
+            loss = self.loss(prediction, y)
             loss = torch.mean(loss)
 
-        return loss, prediction_FOV, inf_time
+        return loss, prediction, inf_time

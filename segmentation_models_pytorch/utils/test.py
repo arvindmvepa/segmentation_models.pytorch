@@ -26,8 +26,6 @@ class TestEpoch(ValidEpoch):
             for i, (x, y) in enumerate(iterator):
                 x, y = x.to(self.device), y.to(self.device)
                 loss, y_pred, inf_time = self.batch_update(x, y)
-                # update gt with FOV
-                y = y[y != -1]
 
                 # update loss logs
                 loss_value = loss.cpu().detach().numpy()
@@ -75,11 +73,10 @@ class TestEnsembleEpoch(TestEpoch):
         # resize = Resize((584, 565))
         # prediction = resize(prediction)
 
-        prediction_FOV = torch.squeeze(x)
-        y_FOV = y[y != -1]
+        prediction = x
 
-        loss = self.loss(prediction_FOV, y_FOV)
+        loss = self.loss(prediction, y)
         loss = torch.mean(loss)
 
-        return loss, prediction_FOV, 0
+        return loss, prediction, 0
 

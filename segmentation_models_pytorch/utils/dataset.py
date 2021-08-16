@@ -70,10 +70,10 @@ class Dataset(BaseDataset):
         masks = [(mask == v) for v in self.class_values]
         mask = np.stack(masks, axis=-1).astype('float')
 
-        # add a negative value for ignored pixels
-        omask = (1 - np.load(omask_loc)) * -1
+        # make out of mask pixels negative class
+        omask = np.load(omask_loc)
         omask = omask[:, :, np.newaxis]
-        mask = mask + omask
+        mask = mask * omask
 
         # apply augmentations
         if self.augmentation:
