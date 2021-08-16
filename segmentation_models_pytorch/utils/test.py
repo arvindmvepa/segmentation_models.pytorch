@@ -74,6 +74,8 @@ class TestEnsembleEpoch(TestEpoch):
         # resize prediction to gt size
         # resize = Resize((584, 565))
         # prediction = resize(prediction)
+        print(prediction.shape)
+        print(y.shape)
         prediction_FOV = prediction[y != -1]
         y_FOV = y[y != -1]
 
