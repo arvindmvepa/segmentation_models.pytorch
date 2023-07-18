@@ -21,8 +21,9 @@ def run_test_exp(model_bnames, exp_dir, **params):
                 job_params = json.load(json_file)
             job_params.update(params)
             job_params['model_path'] = os.path.join(job_dir, model_bname)
-            test_net(**job_params)
-
+            p = multiprocessing.Process(target=test_net, kwargs=job_params)
+            p.start()
+            p.join()
 
 
 def run_val_exp(model_bnames, exp_dir, **params):
@@ -54,6 +55,10 @@ def run_exp(exp_dir, **search_params):
         p = multiprocessing.Process(target=train_net, kwargs=search)
         p.start()
         p.join()
+
+        if p.exception:
+            error, traceback = p.exception
+            print(traceback)
 
 
 
