@@ -25,6 +25,10 @@ def run_test_exp(model_bnames, exp_dir, **params):
             p.start()
             p.join()
 
+            if p.exception:
+                error, traceback = p.exception
+                print(traceback)
+
 
 def run_val_exp(model_bnames, exp_dir, **params):
     if isinstance(model_bnames, str):
