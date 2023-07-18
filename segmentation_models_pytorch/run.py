@@ -21,13 +21,8 @@ def run_test_exp(model_bnames, exp_dir, **params):
                 job_params = json.load(json_file)
             job_params.update(params)
             job_params['model_path'] = os.path.join(job_dir, model_bname)
-            p = multiprocessing.Process(target=test_net, kwargs=job_params)
-            p.start()
-            p.join()
+            test_net(**job_params)
 
-            if p.exception:
-                error, traceback = p.exception
-                print(traceback)
 
 
 def run_val_exp(model_bnames, exp_dir, **params):
