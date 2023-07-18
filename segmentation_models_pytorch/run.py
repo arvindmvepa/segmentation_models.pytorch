@@ -52,13 +52,7 @@ def run_exp(exp_dir, **search_params):
         print("starting exp: {}, {}".format(str(i), str(search)))
         save_dir = os.path.join(exp_dir, str(i))
         search["save_dir"] = save_dir
-        p = multiprocessing.Process(target=train_net, kwargs=search)
-        p.start()
-        p.join()
-
-        if p.exception:
-            error, traceback = p.exception
-            print(traceback)
+        train_net(**search)
 
 
 
