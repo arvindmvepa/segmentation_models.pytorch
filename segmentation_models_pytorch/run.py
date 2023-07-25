@@ -52,7 +52,9 @@ def run_exp(exp_dir, **search_params):
         print("starting exp: {}, {}".format(str(i), str(search)))
         save_dir = os.path.join(exp_dir, str(i))
         search["save_dir"] = save_dir
-        train_net(**search)
+        p = multiprocessing.Process(target=train_net, kwargs=search)
+        p.start()
+        p.join()
 
 
 
