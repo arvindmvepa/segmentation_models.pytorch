@@ -19,45 +19,11 @@ def get_pos_wt(masks_fps, c=1.0):
         return 1.0
 
 
-def get_training_augmentation(height=1024, width=1024):
+def get_training_augmentation():
     train_transform = [
-
-        albu.HorizontalFlip(p=0.5),
-
-        albu.ShiftScaleRotate(scale_limit=0.5, rotate_limit=0, shift_limit=0.1, p=1, border_mode=0),
-
-        albu.PadIfNeeded(min_height=height, min_width=width, always_apply=True, border_mode=0),
-        albu.Resize(height=height, width=width, always_apply=True),
-        # albu.RandomCrop(height=320, width=320, always_apply=True),
-
-        albu.IAAAdditiveGaussianNoise(p=0.2),
-        albu.IAAPerspective(p=0.5),
-
-        albu.OneOf(
-            [
-                albu.CLAHE(p=1),
-                albu.RandomBrightness(p=1),
-                albu.RandomGamma(p=1),
-            ],
-            p=0.9,
-        ),
-
-        albu.OneOf(
-            [
-                albu.IAASharpen(p=1),
-                albu.Blur(blur_limit=3, p=1),
-                albu.MotionBlur(blur_limit=3, p=1),
-            ],
-            p=0.9,
-        ),
-
-        albu.OneOf(
-            [
-                albu.RandomContrast(p=1),
-                albu.HueSaturationValue(p=1),
-            ],
-            p=0.9,
-        ),
+        albu.Affine(rotate=10, translate_percent=(0.1, 0.1), scale=(0.9, 1.1), shear=10),
+        albu.HueSaturationValue(),
+        albu.ElasticTransform()
     ]
     return albu.Compose(train_transform)
 
@@ -87,9 +53,13 @@ def get_preprocessing(preprocessing_fn):
         transform: albumentations.Compose
 
     """
-
-    _transform = [
-        albu.Lambda(image=preprocessing_fn),
-        albu.Lambda(image=to_tensor, mask=to_tensor),
-    ]
+    if preprocessing_fn is not None:
+        _transform = [
+            albu.Lambda(image=preprocessing_fn),
+            albu.Lambda(image=to_tensor, mask=to_tensor),
+        ]
+    else:
+        _transform = [
+            albu.Lambda(image=to_tensor, mask=to_tensor),
+        ]
     return albu.Compose(_transform)

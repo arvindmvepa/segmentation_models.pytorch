@@ -70,11 +70,14 @@ class IoU(base.Metric):
 class Fscore(base.Metric):
     __name__ = 'fscore'
 
-    def __init__(self, beta=1, eps=1e-7, threshold=0.5, activation=None, ignore_channels=None, **kwargs):
+    def __init__(self, class_val=None, beta=1, eps=1e-7, threshold="argmax", accum=None,
+                 activation=None, ignore_channels=None, **kwargs):
         super().__init__(**kwargs)
+        self.class_val = class_val
         self.eps = eps
         self.beta = beta
         self.threshold = threshold
+        self.accum = accum
         self.activation = Activation(activation)
         self.ignore_channels = ignore_channels
 
@@ -82,21 +85,23 @@ class Fscore(base.Metric):
         y_pr = self.activation(y_pr)
         return F.f_score(
             y_pr, y_gt,
+            class_val=self.class_val,
             eps=self.eps,
             beta=self.beta,
             threshold=self.threshold,
+            accum=self.accum,
             ignore_channels=self.ignore_channels,
         )
 
     @property
     def name(self):
-        return self.__name__ + "_" + str(self.threshold)
+        return self.__name__ + "_" + str(self.class_val) + "_" + str(self.accum) + "_" + str(self.threshold)
 
 
 class Accuracy(base.Metric):
     __name__ = 'accuracy'
 
-    def __init__(self, threshold=0.5, activation=None, ignore_channels=None, **kwargs):
+    def __init__(self, threshold="argmax", activation=None, ignore_channels=None, **kwargs):
         super().__init__(**kwargs)
         self.threshold = threshold
         self.activation = Activation(activation)

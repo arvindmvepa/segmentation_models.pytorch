@@ -1,119 +1,77 @@
 import numpy as np
 import os
 import cv2
+import h5py
 from torch.utils.data import Dataset as BaseDataset
 
 
 class Dataset(BaseDataset):
-    """
 
-    Args:
-        images_dir (str): path to images folder
-        masks_dir (str): path to segmentation masks folder
-        class_values (list): values of classes to extract from segmentation mask
-        augmentation (albumentations.Compose): data transfromation pipeline
-            (e.g. flip, scale, etc.)
-        preprocessing (albumentations.Compose): data preprocessing
-            (e.g. noralization, shape manipulation, etc.)
-
-    """
-
-    CLASSES = ["vessel"]
-
-    def __init__(
-            self,
-            images_dir,
-            masks_dir,
-            extra_masks_dir=None,
-            ids=None,
-            augmentation=None,
-            preprocessing=None,
-    ):
+    def __init__(self, data_dir="ACDC/ACDC_training_slices", ids=None, num_classes=5, augmentation=None,
+                 resize_width=224, resize_height=224, preprocessing=None):
+        self.sample_list = []
         if not ids:
-            # Using numpy arrays
-            self.ids = sorted(os.listdir(masks_dir))
+            self.all_slices = sorted(os.listdir(data_dir))
         else:
-            self.ids = ids
-
-        self.ids = [id[:-4] for id in self.ids]
-        self.images_fps = [os.path.join(images_dir, image_id) for image_id in self.ids]
-        self.masks_fps = [os.path.join(masks_dir, image_id + ".npy") for image_id in self.ids
-                          if (image_id + ".npy") in os.listdir(masks_dir)]
-        if extra_masks_dir:
-            self.masks_fps = self.masks_fps + [os.path.join(extra_masks_dir, image_id + ".npy") for image_id in self.ids
-                                               if ((image_id + ".npy") in os.listdir(extra_masks_dir)) and
-                                               (os.path.join(masks_dir, image_id + ".npy") not in self.masks_fps)]
-
-        print("The number of masks are: {}. The masks are: {}".format(len(self.masks_fps), str(self.masks_fps)))
-        # UPDATED: mask is equivalent 1
-        self.class_values = [1]
+            self.all_slices = sorted([id for id in os.listdir(data_dir) if id in ids])
+        self.sample_list = self.all_slices
+        self.sample_list = [os.path.join(data_dir, im_path) for im_path in self.sample_list]
+        self.class_values = [i for i in range(num_classes)]
 
         self.augmentation = augmentation
         self.preprocessing = preprocessing
+        self.resize_width = resize_width
+        self.resize_height = resize_height
 
-    def __getitem__(self, i):
+        print("total {} samples".format(len(self.sample_list)))
 
-        # read data
-        image = cv2.imread(self.images_fps[i])
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        mask_loc = self.masks_fps[i]
+    def __getitem__(self, idx):
+        case = self.sample_list[idx]
+        h5f = h5py.File(case, 'r')
+        # convert to 3 channels and float32
+        image = h5f['image'][:]
+        image = cv2.resize(image, (self.resize_width, self.resize_height))
+        image = np.stack((image,) * 3, axis=-1).astype(np.float32)
+        # convert to one-hot encoding
+        label = h5f['label'][:]
+        # TODO: labels need to be upsampled for correct evaluation
+        label = cv2.resize(label, (self.resize_width, self.resize_height))
+        label = [(label == v) for v in self.class_values]
+        label = np.stack(label, axis=-1).astype(np.float32)
 
-        mask = np.load(mask_loc)
-
-        # extract certain classes from mask (e.g. cars)
-        masks = [(mask == v) for v in self.class_values]
-        mask = np.stack(masks, axis=-1).astype('float')
 
         # apply augmentations
         if self.augmentation:
-            sample = self.augmentation(image=image, mask=mask)
-            image, mask = sample['image'], sample['mask']
+            import sys
+            sample = self.augmentation(image=image, mask=label)
+            image, label = sample['image'], sample['mask']
 
         # apply preprocessing
         if self.preprocessing:
-            sample = self.preprocessing(image=image, mask=mask)
-            image, mask = sample['image'], sample['mask']
+            sample = self.preprocessing(image=image, mask=label)
+            image, label = sample['image'], sample['mask']
 
-        return image, mask
+        return image, label
 
     def __len__(self):
-        return len(self.ids)
+        return len(self.sample_list)
 
 
-class InferenceDataset(BaseDataset):
-    """
+class InferenceDataset(Dataset):
 
-    Args:
-        images_dir (str): path to images folder
-        augmentation (albumentations.Compose): data transfromation pipeline
-            (e.g. flip, scale, etc.)
-        preprocessing (albumentations.Compose): data preprocessing
-            (e.g. noralization, shape manipulation, etc.)
+    def __getitem__(self, idx):
+        case = self.sample_list[idx]
+        h5f = h5py.File(case, 'r')
+        # convert to 3 channels and float32
+        image = h5f['image'][:]
+        image = cv2.resize(image, (self.resize_width, self.resize_height))
+        image = np.stack((image,) * 3, axis=-1).astype(np.float32)
 
-    """
-
-    def __init__(
-            self,
-            images_dir,
-            augmentation=None,
-            preprocessing=None,
-    ):
-        self.images_fps = [os.path.join(images_dir, image_id) for image_id in self.ids]
-
-        print("The number of images are: {}.".format(len(self.images_fps)))
-
-        self.augmentation = augmentation
-        self.preprocessing = preprocessing
-
-    def __getitem__(self, i):
-
-        # read data
-        image = cv2.imread(self.images_fps[i])
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         # apply augmentations
         if self.augmentation:
-            sample = self.augmentation(image=image,)
+            import sys
+            sample = self.augmentation(image=image)
             image = sample['image']
 
         # apply preprocessing
@@ -121,7 +79,8 @@ class InferenceDataset(BaseDataset):
             sample = self.preprocessing(image=image)
             image = sample['image']
 
-        return image, self.images_fps[i]
+        return image, case
 
     def __len__(self):
-        return len(self.images_fps)
+        return len(self.sample_list)
+

@@ -1,6 +1,5 @@
 import os
 import sys
-from sklearn.model_selection import KFold
 
 from torch.utils.data import DataLoader
 
@@ -16,24 +15,77 @@ from .metrics import metrics
 from .optimizers import optimizers
 from segmentation_models_pytorch import decoders
 from .preprocessing import get_pos_wt, get_training_augmentation, get_validation_augmentation, get_preprocessing
+from tqdm import tqdm
 
 
-def generate_predictions(model_dir, data_dir, save_data_dir, encoder='se_resnext50_32x4d', encoder_weights='imagenet',
-                         bs=1, cuda='0', **kwargs):
+def eval_test_set(model_dir, save_dir, data_dir="ACDC/ACDC_testing_slices", encoder='se_resnext50_32x4d',
+                  encoder_weights=None, num_classes=4, width=224, height=224, bs=1,
+                  loss=('dice', {'weighted': False}), best_metrics=(('fscore_None_avg_argmax', 0.0, [], True), ),
+                  test_metrics=(('fscore', {"class_val": None, "accum": "avg"}),
+                                ('fscore', {"class_val": 0}),
+                                ('fscore', {"class_val": 1}),
+                                ('fscore', {"class_val": 2}),
+                                ('fscore', {"class_val": 3})),
+                  device='cuda', cuda='0', **kwargs):
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    model_path = os.path.join(model_dir, f'best_model_{kwargs["best_metrics"][0][0]}.pth')
+    model_path = os.path.join(model_dir, f'best_model_{best_metrics[0][0]}.pth')
 
     model = torch.load(model_path)
-    preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
+    preprocessing_fn = None
+
+    test_dataset = Dataset(
+        data_dir=data_dir,
+        num_classes=num_classes,
+        preprocessing=get_preprocessing(preprocessing_fn),
+        resize_width=width,
+        resize_height=height
+    )
+
+    test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=False, num_workers=4)
+
+    loss = losses[loss[0]](**loss[1])
+    test_metrics = list(test_metrics)
+    for i in range(len(test_metrics)):
+        if test_metrics[i] != 'inf_time':
+            test_metrics[i] = metrics[test_metrics[i][0]](**test_metrics[i][1])
+
+    test_epoch = smp.utils.train.ValidEpoch(
+        model,
+        loss=loss,
+        metrics=test_metrics,
+        device=device,
+        verbose=True,
+    )
+    model.eval()
+    test_logs = test_epoch.run(test_loader)
+
+    with open(os.path.join(save_dir, 'test_metrics.json'), 'w') as outfile:
+        json.dump(test_logs, outfile)
+
+
+def generate_predictions(model_dir, save_data_dir, data_dir="ACDC/ACDC_training_slices", encoder='se_resnext50_32x4d',
+                         encoder_weights=None, num_classes=5, width=224, height=224, bs=1,
+                         best_metrics=(('fscore_None_avg_argmax', 0.0, [], True), ), device='cuda', cuda='0', **kwargs):
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = cuda
+    if not os.path.exists(save_data_dir):
+        os.makedirs(save_data_dir)
+
+    model_path = os.path.join(model_dir, f'best_model_{best_metrics[0][0]}.pth')
+
+    model = torch.load(model_path)
+    preprocessing_fn = None
 
     inf_dataset = InferenceDataset(
-        data_dir,
-        augmentation=None,
-        preprocessing=get_preprocessing(preprocessing_fn),
+        data_dir=data_dir,
+        num_classes = num_classes,
+        preprocessing = get_preprocessing(preprocessing_fn),
+        resize_width = width,
+        resize_height = height
     )
 
     dataloader = DataLoader(inf_dataset, batch_size=bs, shuffle=False, num_workers=4)
@@ -41,7 +93,8 @@ def generate_predictions(model_dir, data_dir, save_data_dir, encoder='se_resnext
     model.eval()
     with tqdm(dataloader, file=sys.stdout) as iterator:
         for img, file_path in iterator:
-            img = img.to(self.device)
+            img = img.to(device)
+            file_path = file_path[0]
             with torch.no_grad():
                 y_pred = model(img)
             y_pred = np.float32(y_pred.cpu().detach().numpy())
@@ -49,13 +102,19 @@ def generate_predictions(model_dir, data_dir, save_data_dir, encoder='se_resnext
 
 
 
-def train_fsl(train_sample_masks, data_dir, seg_dir, save_dir, decoder="unet", encoder='se_resnext50_32x4d',
-              encoder_weights='imagenet', activation='sigmoid', height=256, width=256, loss=('bce_lts', {}),
-              pos_scale= None, optimizer=("adam", {"lr": 1e-4}), lr_schedule=((200, 1e-5), (400, 1e-6)), bs=8,
-              train_metrics=(('accuracy', {}), ), best_metrics=(('accuracy_0.5', 0.0, [], True), ),
+def train_fsl(train_ids, save_dir, data_dir="ACDC/ACDC_training_slices", decoder="unet", encoder='se_resnext50_32x4d',
+              activation='softmax', encoder_weights=None, num_classes=4, width=224, height=224,
+              loss=('dice', {'weighted': False}),
+              optimizer=("adam", {"lr": 1e-4}), lr_schedule=((200, 1e-5), (400, 1e-6)), bs=16,
+              train_metrics=(('fscore', {"class_val": None, "accum": "avg"}),
+                             ('fscore', {"class_val": 0}),
+                             ('fscore', {"class_val": 1}),
+                             ('fscore', {"class_val": 2}),
+                             ('fscore', {"class_val": 3})),
+              best_metrics=(('fscore_None_avg_argmax', 0.0, [], True), ),
               metric_freq=10, num_epochs=200, random_state=42, device='cuda', cuda='0', save_net=True, **kwargs):
 
-    if len(train_sample_masks) == 0:
+    if len(train_ids) == 0:
         raise ValueError("No training samples provided")
 
     if not os.path.exists(save_dir):
@@ -64,30 +123,31 @@ def train_fsl(train_sample_masks, data_dir, seg_dir, save_dir, decoder="unet", e
 
     json.dump(locals(), open(os.path.join(save_dir, "params.json"), 'w'))
 
-    train_metrics = list(train_metrics)
-    best_metrics = list(best_metrics)
-
     os.environ['CUDA_VISIBLE_DEVICES'] = cuda
 
     model = decoders[decoder](encoder_name=encoder,
                               encoder_weights=encoder_weights,
-                              classes=1,
+                              classes=num_classes,
                               activation=activation)
-    preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
-    print("# of unique train images: {}".format(len(set(train_sample_masks))))
+    preprocessing_fn = None
+
+    print("# of unique train images: {}".format(len(set(train_ids))))
 
     train_dataset = Dataset(
-        data_dir,
-        seg_dir,
-        ids=train_sample_masks,
-        augmentation=get_training_augmentation(height=height, width=width),
+        data_dir=data_dir,
+        ids=train_ids,
+        num_classes=num_classes,
+        augmentation=get_training_augmentation(),
         preprocessing=get_preprocessing(preprocessing_fn),
+        resize_width=width,
+        resize_height=height
     )
 
     train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, num_workers=12)
 
-    loss = losses[loss[0]](pos_weight=torch.FloatTensor([get_pos_wt(masks_fps=train_dataset.masks_fps, c=pos_scale)]),
-                           reduction="none", **loss[1])
+    loss = losses[loss[0]](**loss[1])
+    train_metrics = list(train_metrics)
+    best_metrics = list(best_metrics)
 
     for i in range(len(train_metrics)):
         if train_metrics[i] != 'inf_time':
@@ -106,12 +166,12 @@ def train_fsl(train_sample_masks, data_dir, seg_dir, save_dir, decoder="unet", e
 
     for i in range(0, num_epochs):
         print('\nEpoch: {}'.format(i))
-        train_logs == train_epoch.run(train_loader)
+        train_logs = train_epoch.run(train_loader)
         cur_epoch = i + 1
         if cur_epoch % metric_freq == 0:
             for i in range(len(best_metrics)):
                 metric, max_score, other_metrics, gt = best_metrics[i]
-                max_score = save_best_checkpoint(model, metric, max_score, train_logs, cur_epoch, fold,
+                max_score = save_best_checkpoint(model, metric, max_score, train_logs, cur_epoch,
                                                  save_dir=save_dir, other_metrics=other_metrics, gt=gt,
                                                  save_net=save_net)
                 best_metrics[i] = metric, max_score, other_metrics, gt
@@ -123,7 +183,7 @@ def train_fsl(train_sample_masks, data_dir, seg_dir, save_dir, decoder="unet", e
                 print('Changed Decoder learning rate to {}!'.format(str(lr)))
 
 
-def save_best_checkpoint(model, metric, prev_max_score, valid_logs, cur_epoch, cur_fold, save_dir, other_metrics=None,
+def save_best_checkpoint(model, metric, prev_max_score, valid_logs, cur_epoch, save_dir, other_metrics=None,
                          gt=True, save_net=True):
     if metric in valid_logs:
         if ((valid_logs[metric] > prev_max_score) if gt
@@ -131,7 +191,7 @@ def save_best_checkpoint(model, metric, prev_max_score, valid_logs, cur_epoch, c
             max_score = valid_logs[metric]
             if save_net:
                 torch.save(model, os.path.join(save_dir, 'best_model_' + metric + '.pth'))
-            metrics = {metric: max_score, "epoch": cur_epoch, 'fold': cur_fold}
+            metrics = {metric: max_score, "epoch": cur_epoch}
             if other_metrics:
                 metrics.update({valid_metric: valid_logs[valid_metric]
                                 for metric in other_metrics
@@ -146,7 +206,7 @@ def save_best_checkpoint(model, metric, prev_max_score, valid_logs, cur_epoch, c
     return prev_max_score
 
 
-def save_best_thresh_checkpoint(model, metric, prev_max_score, valid_logs, cur_epoch, cur_fold, save_dir, gt=True,
+def save_best_thresh_checkpoint(model, metric, prev_max_score, valid_logs, cur_epoch, save_dir, gt=True,
                                 save_net=True):
     metrics = {valid_metric: valid_logs[valid_metric]
                for valid_metric in valid_logs.keys() if metric in valid_metric}
@@ -163,8 +223,7 @@ def save_best_thresh_checkpoint(model, metric, prev_max_score, valid_logs, cur_e
 
             if save_net:
                 torch.save(model, os.path.join(save_dir, 'best_thresh_model_' + metric + '.pth'))
-            metrics = {metric: str(max_score), "epoch": cur_epoch, 'fold': cur_fold,
-                       "thresh": metric_name}
+            metrics = {metric: str(max_score), "epoch": cur_epoch, "thresh": metric_name}
             with open(os.path.join(save_dir, 'thresh_' + metric + '.json'), 'w') as outfile:
                 json.dump(metrics, outfile)
             print('thresh ' + metric + ' Model saved!')
@@ -172,7 +231,7 @@ def save_best_thresh_checkpoint(model, metric, prev_max_score, valid_logs, cur_e
     return prev_max_score
 
 
-def save_last_checkpoint(model, metrics, valid_logs, cur_epoch, cur_fold, save_dir, save_net=True):
+def save_last_checkpoint(model, metrics, valid_logs, cur_epoch, save_dir, save_net=True):
     if save_net:
         torch.save(model, os.path.join(save_dir, str(cur_epoch) + '.pth'))
         torch.save(model, os.path.join(save_dir, 'last.pth'))
@@ -181,7 +240,7 @@ def save_last_checkpoint(model, metrics, valid_logs, cur_epoch, cur_fold, save_d
                for metric in metrics
                for valid_metric in valid_logs.keys() if metric in valid_metric}
 
-    metrics.update({"epoch": cur_epoch, 'fold': cur_fold})
+    metrics.update({"epoch": cur_epoch})
     with open(os.path.join(save_dir, str(cur_epoch) + '.json'), 'w') as outfile:
         json.dump(metrics, outfile)
     with open(os.path.join(save_dir, 'last.json'), 'w') as outfile:
