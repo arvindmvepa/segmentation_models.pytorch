@@ -63,6 +63,8 @@ def f_score(pr, gt, class_val=None, beta=1, eps=1e-7, threshold=None, accum=None
         num_classes = pr.shape[1]
         score_ = 0.0
         for class_ in range(num_classes):
+            if class_ == 0:
+                continue
             pr_ = pr[:, class_, :, :]
             gt_ = gt[:, class_, :, :]
             tp = torch.sum(gt_ * pr_)
