@@ -11,6 +11,7 @@ from .inceptionv4 import inceptionv4_encoders
 from .efficientnet import efficient_net_encoders
 from .mobilenet import mobilenet_encoders
 from .xception import xception_encoders
+from .biomedclip import load_biomedclip_model, load_biomedclip_preprocessor
 
 
 from ._preprocessing import preprocess_input
@@ -29,17 +30,19 @@ encoders.update(xception_encoders)
 
 
 def get_encoder(name, in_channels=3, depth=5, weights=None):
-    Encoder = encoders[name]["encoder"]
-    params = encoders[name]["params"]
-    params.update(depth=depth)
-    encoder = Encoder(**params)
+    if name == "biomedclip":
+        return load_biomedclip_model()
+    else:
+        Encoder = encoders[name]["encoder"]
+        params = encoders[name]["params"]
+        params.update(depth=depth)
+        encoder = Encoder(**params)
 
-    if weights is not None:
-        settings = encoders[name]["pretrained_settings"][weights]
-        encoder.load_state_dict(model_zoo.load_url(settings["url"]))
+        if weights is not None:
+            settings = encoders[name]["pretrained_settings"][weights]
+            encoder.load_state_dict(model_zoo.load_url(settings["url"]))
 
-    encoder.set_in_channels(in_channels)
-
+        encoder.set_in_channels(in_channels)
     return encoder
 
 
