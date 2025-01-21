@@ -1,5 +1,6 @@
 import functools
 import torch.utils.model_zoo as model_zoo
+import torch
 
 from .resnet import resnet_encoders
 from .dpn import dpn_encoders
@@ -31,7 +32,9 @@ encoders.update(xception_encoders)
 
 def get_encoder(name, in_channels=3, depth=5, weights=None):
     if name == "biomedclip":
-        return load_biomedclip_model()
+        encoder = load_biomedclip_model()
+        sample_input = torch.randn(1, 3, 224, 224).to("cuda")
+        encoder.out_channels = encoder(sample_input).size(1)
     else:
         Encoder = encoders[name]["encoder"]
         params = encoders[name]["params"]
