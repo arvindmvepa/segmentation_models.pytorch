@@ -4,13 +4,13 @@ import torch
 
 def load_biomedclip_model(model_name="hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224"):
     # make sure to only retain the trunk of the CLIP model
-    model, _ = load_clip_vision_model(model_name).trunk
-    return model
+    model, _ = load_clip_vision_model(model_name)
+    return model.trunk
 
 
 def load_biomedclip_preprocessor(model_name="hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224"):
     # make sure to only retain the trunk of the CLIP model
-    _, preprocessor = load_clip_vision_model(model_name).trunk
+    _, preprocessor = load_clip_vision_model(model_name)
     return preprocessor
 
 
